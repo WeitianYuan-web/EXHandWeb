@@ -8,7 +8,6 @@ class HandSensorApp {
         this.serialManager = null;
         this.isInitialized = false;
         this.updateInterval = null;
-        this.isAnimationEnabled = false;
         
         // UI元素引用
         this.elements = {
@@ -17,7 +16,6 @@ class HandSensorApp {
             connectBtn: document.getElementById('connect-btn'),
             disconnectBtn: document.getElementById('disconnect-btn'),
             resetValuesBtn: document.getElementById('reset-values'),
-            toggleAnimationBtn: document.getElementById('toggle-animation'),
             packetCount: document.getElementById('packet-count'),
             updateRate: document.getElementById('update-rate'),
             lastUpdate: document.getElementById('last-update'),
@@ -49,6 +47,7 @@ class HandSensorApp {
         
         // 关节进度条元素
         this.jointElements = this.initializeJointElements();
+        this.sensorElements = this.initializeSensorElements();
         
         // 日志窗口元素
         this.logContainer = null;
@@ -70,6 +69,9 @@ class HandSensorApp {
             // 初始化日志窗口
             this.initLogWindow();
             
+            // 初始化进度条显示
+            this.initializeProgressBars();
+            
             // 设置事件监听器
             this.setupEventListeners();
             
@@ -90,29 +92,124 @@ class HandSensorApp {
 
     /**
      * 初始化关节元素引用
-     * @returns {Object} 关节元素对象
+     * @returns {Object} 关节元素对象，包含左右手
      */
     initializeJointElements() {
-        const joints = {};
+        const joints = {
+            right: {},
+            left: {}
+        };
         const fingerNames = ['thumb', 'index', 'middle', 'ring', 'pinky'];
         const jointTypes = ['yaw', 'pitch', 'tip'];
+        const hands = ['right', 'left'];
         
-        fingerNames.forEach(fingerName => {
-            joints[fingerName] = {};
-            jointTypes.forEach(jointType => {
-                const barElement = document.getElementById(`${fingerName}-${jointType}-bar`);
-                const valueElement = document.getElementById(`${fingerName}-${jointType}-value`);
-                
-                if (barElement && valueElement) {
-                    joints[fingerName][jointType] = {
-                        bar: barElement,
-                        value: valueElement
-                    };
+        hands.forEach(hand => {
+            fingerNames.forEach(fingerName => {
+                if (!joints[hand][fingerName]) {
+                    joints[hand][fingerName] = {};
                 }
+                jointTypes.forEach(jointType => {
+                    const fillElementId = `${hand}-${fingerName}-${jointType}-bar`;
+                    const valueElementId = `${hand}-${fingerName}-${jointType}-value`;
+                    const fillElement = document.getElementById(fillElementId);
+                    const valueElement = document.getElementById(valueElementId);
+                    const barContainer = fillElement ? fillElement.closest('.progress-bar') : null;
+                    
+                    if (fillElement && valueElement && barContainer) {
+                        joints[hand][fingerName][jointType] = {
+                            fill: fillElement,  // progress-fill 元素
+                            bar: barContainer,  // progress-bar 容器
+                            value: valueElement
+                        };
+                    } else {
+                        // 调试：输出缺失的元素
+                        if (!fillElement) {
+                            console.warn(`未找到填充元素: ${fillElementId}`);
+                        }
+                        if (!valueElement) {
+                            console.warn(`未找到数值元素: ${valueElementId}`);
+                        }
+                        if (!barContainer && fillElement) {
+                            console.warn(`未找到进度条容器: ${fillElementId}`);
+                        }
+                    }
+                });
             });
         });
         
         return joints;
+    }
+
+    /**
+     * 初始化传感器数据元素引用
+     * @returns {Object} 传感器数据元素对象，包含左右手
+     */
+    initializeSensorElements() {
+        const sensors = {
+            right: {},
+            left: {}
+        };
+        const fingerNames = ['thumb', 'index', 'middle', 'ring', 'pinky'];
+        const jointTypes = ['yaw', 'pitch', 'tip'];
+        const hands = ['right', 'left'];
+        
+        hands.forEach(hand => {
+            fingerNames.forEach(fingerName => {
+                if (!sensors[hand][fingerName]) {
+                    sensors[hand][fingerName] = {};
+                }
+                jointTypes.forEach(jointType => {
+                    const valueElementId = `${hand}-sensor-${fingerName}-${jointType}-value`;
+                    const valueElement = document.getElementById(valueElementId);
+                    
+                    if (valueElement) {
+                        sensors[hand][fingerName][jointType] = {
+                            value: valueElement
+                        };
+                    } else {
+                        console.warn(`未找到传感器数值元素: ${valueElementId}`);
+                    }
+                });
+            });
+        });
+        
+        return sensors;
+    }
+
+    /**
+     * 初始化进度条显示
+     */
+    initializeProgressBars() {
+        const fingerNames = ['thumb', 'index', 'middle', 'ring', 'pinky'];
+        const jointTypes = ['yaw', 'pitch', 'tip'];
+        const hands = ['right', 'left'];
+        
+        hands.forEach(hand => {
+            fingerNames.forEach(fingerName => {
+                jointTypes.forEach(jointType => {
+                    if (this.jointElements[hand] && 
+                        this.jointElements[hand][fingerName] && 
+                        this.jointElements[hand][fingerName][jointType]) {
+                        const elements = this.jointElements[hand][fingerName][jointType];
+                        
+                        // 确保数值显示为0.000
+                        if (elements.value) {
+                            elements.value.textContent = '0.000';
+                        }
+                        
+                        // 确保进度条初始宽度/高度为0%
+                        if (elements.bar && elements.fill) {
+                            // 检查是否是竖直进度条
+                            if (elements.bar.classList.contains('vertical')) {
+                                elements.fill.style.height = '0%';
+                            } else {
+                                elements.fill.style.width = '0%';
+                            }
+                        }
+                    }
+                });
+            });
+        });
     }
 
     /**
@@ -145,11 +242,6 @@ class HandSensorApp {
             // 重置数值按钮
             if (this.elements.resetValuesBtn) {
                 this.elements.resetValuesBtn.addEventListener('click', () => this.resetValues());
-            }
-            
-            // 切换动画模式按钮
-            if (this.elements.toggleAnimationBtn) {
-                this.elements.toggleAnimationBtn.addEventListener('click', () => this.toggleAnimation());
             }
             
             // 系统命令按钮
@@ -461,11 +553,21 @@ class HandSensorApp {
             
             // 数据接收回调
             this.serialManager.setDataCallback((jointData) => {
-                this.updateJointDisplay(jointData);
+                // 区分传感器数据和映射数据
+                // 映射数据有 mappingData 字段，传感器数据有 sensorData 字段
+                if (jointData.mappingData && Array.isArray(jointData.mappingData)) {
+                    // 映射数据：更新手部关节映射数据监控
+                    this.updateJointDisplay(jointData);
+                } else if (jointData.sensorData && Array.isArray(jointData.sensorData)) {
+                    // 传感器数据：更新传感器数据可视化
+                    this.updateSensorDisplay(jointData);
+                }
+                
                 this.updateStatistics();
                 // 记录数据接收日志（降低频率，每10个数据包记录一次）
                 if (jointData.packetNumber % 10 === 0) {
-                    this.log(`收到${jointData.hand === 0 ? '右手' : '左手'}数据包 #${jointData.packetNumber}`, 'info');
+                    const dataType = jointData.mappingData ? '映射' : '传感器';
+                    this.log(`收到${jointData.hand === 0 ? '右手' : '左手'}${dataType}数据包 #${jointData.packetNumber}`, 'info');
                 }
             });
             
@@ -608,6 +710,15 @@ class HandSensorApp {
         const fingerNames = ['thumb', 'index', 'middle', 'ring', 'pinky'];
         const jointTypes = ['yaw', 'pitch', 'tip'];
         
+        // 确定是左手还是右手 (0=右手, 1=左手)
+        const hand = jointData.hand === 0 ? 'right' : 'left';
+        
+        // 调试信息
+        if (!this.jointElements[hand]) {
+            console.warn(`未找到手部元素: ${hand}, hand值=${jointData.hand}`);
+            return;
+        }
+        
         // 检查是否有映射数据（mappingData字段）
         const useMappingData = jointData.mappingData && Array.isArray(jointData.mappingData);
         
@@ -629,25 +740,104 @@ class HandSensorApp {
                     }
                 }
                 
-                if (this.jointElements[fingerName] && this.jointElements[fingerName][jointType] && value !== undefined) {
-                    const elements = this.jointElements[fingerName][jointType];
+                if (this.jointElements[hand] && 
+                    this.jointElements[hand][fingerName] && 
+                    this.jointElements[hand][fingerName][jointType] && 
+                    value !== undefined) {
+                    const elements = this.jointElements[hand][fingerName][jointType];
                     
                     // 确保值在0-1.0范围内
                     value = Math.max(0, Math.min(1.0, value));
                     
                     // 更新数值显示（显示为百分比或小数）
-                    elements.value.textContent = value.toFixed(3);
+                    if (elements.value) {
+                        elements.value.textContent = value.toFixed(3);
+                    } else {
+                        console.warn(`未找到数值元素: ${hand}-${fingerName}-${jointType}-value`);
+                    }
                     
                     // 更新进度条（0-1.0映射到0-100%）
                     const percentage = value * 100;
-                    elements.bar.style.width = `${percentage}%`;
+                    // 检查是否是竖直进度条（检查progress-bar是否有vertical类）
+                    if (elements.bar && elements.bar.classList.contains('vertical')) {
+                        // 竖直进度条：更新fill的高度
+                        if (elements.fill) {
+                            elements.fill.style.height = `${percentage}%`;
+                        } else {
+                            console.warn(`未找到填充元素: ${hand}-${fingerName}-${jointType}-bar`);
+                        }
+                    } else if (elements.fill) {
+                        // 水平进度条：更新fill的宽度
+                        elements.fill.style.width = `${percentage}%`;
+                    } else {
+                        console.warn(`未找到进度条容器或填充元素: ${hand}-${fingerName}-${jointType}`);
+                    }
+                } else {
+                    // 调试：输出缺失的元素信息
+                    if (!this.jointElements[hand]) {
+                        console.warn(`未找到手部元素: ${hand}`);
+                    } else if (!this.jointElements[hand][fingerName]) {
+                        console.warn(`未找到手指元素: ${hand}-${fingerName}`);
+                    } else if (!this.jointElements[hand][fingerName][jointType]) {
+                        console.warn(`未找到关节元素: ${hand}-${fingerName}-${jointType}`);
+                    }
+                }
+            });
+        });
+    }
+
+    /**
+     * 更新传感器数据显示（0-65535范围）
+     * @param {Object} sensorData - 传感器数据对象
+     */
+    updateSensorDisplay(sensorData) {
+        const fingerNames = ['thumb', 'index', 'middle', 'ring', 'pinky'];
+        const jointTypes = ['yaw', 'pitch', 'tip'];
+        
+        // 确定是左手还是右手 (0=右手, 1=左手)
+        const hand = sensorData.hand === 0 ? 'right' : 'left';
+        
+        // 调试信息
+        if (!this.sensorElements[hand]) {
+            console.warn(`未找到传感器手部元素: ${hand}, hand值=${sensorData.hand}`);
+            return;
+        }
+        
+        // 检查是否有传感器数据
+        const sensorDataArray = sensorData.sensorData;
+        if (!sensorDataArray || !Array.isArray(sensorDataArray)) {
+            console.warn('传感器数据格式错误');
+            return;
+        }
+        
+        fingerNames.forEach(fingerName => {
+            jointTypes.forEach(jointType => {
+                const index = fingerNames.indexOf(fingerName) * 3 + jointTypes.indexOf(jointType);
+                const value = sensorDataArray[index];
+                
+                if (this.sensorElements[hand] && 
+                    this.sensorElements[hand][fingerName] && 
+                    this.sensorElements[hand][fingerName][jointType] && 
+                    value !== undefined) {
+                    const elements = this.sensorElements[hand][fingerName][jointType];
                     
-                    // 添加动画效果
-                    if (this.isAnimationEnabled) {
-                        elements.bar.classList.add('joint-active');
-                        setTimeout(() => {
-                            elements.bar.classList.remove('joint-active');
-                        }, 1000);
+                    // 确保值在0-65535范围内
+                    const clampedValue = Math.max(0, Math.min(65535, value));
+                    
+                    // 更新数值显示（显示为整数）
+                    if (elements.value) {
+                        elements.value.textContent = clampedValue.toString();
+                    } else {
+                        console.warn(`未找到传感器数值元素: ${hand}-sensor-${fingerName}-${jointType}-value`);
+                    }
+                } else {
+                    // 调试：输出缺失的元素信息
+                    if (!this.sensorElements[hand]) {
+                        console.warn(`未找到传感器手部元素: ${hand}`);
+                    } else if (!this.sensorElements[hand][fingerName]) {
+                        console.warn(`未找到传感器手指元素: ${hand}-${fingerName}`);
+                    } else if (!this.sensorElements[hand][fingerName][jointType]) {
+                        console.warn(`未找到传感器关节元素: ${hand}-${fingerName}-${jointType}`);
                     }
                 }
             });
@@ -675,36 +865,36 @@ class HandSensorApp {
     resetValues() {
         const fingerNames = ['thumb', 'index', 'middle', 'ring', 'pinky'];
         const jointTypes = ['yaw', 'pitch', 'tip'];
+        const hands = ['right', 'left'];
         
-        fingerNames.forEach(fingerName => {
-            jointTypes.forEach(jointType => {
-                if (this.jointElements[fingerName] && this.jointElements[fingerName][jointType]) {
-                    const elements = this.jointElements[fingerName][jointType];
-                    
-                    // 重置数值显示（显示为0.000）
-                    elements.value.textContent = '0.000';
-                    
-                    // 重置进度条
-                    elements.bar.style.width = '0%';
-                }
+        hands.forEach(hand => {
+            fingerNames.forEach(fingerName => {
+                jointTypes.forEach(jointType => {
+                    if (this.jointElements[hand] && 
+                        this.jointElements[hand][fingerName] && 
+                        this.jointElements[hand][fingerName][jointType]) {
+                        const elements = this.jointElements[hand][fingerName][jointType];
+                        
+                        // 重置数值显示（显示为0.000）
+                        elements.value.textContent = '0.000';
+                        
+                        // 重置进度条
+                        // 检查是否是竖直进度条
+                        if (elements.bar && elements.fill) {
+                            if (elements.bar.classList.contains('vertical')) {
+                                elements.fill.style.height = '0%';
+                            } else {
+                                elements.fill.style.width = '0%';
+                            }
+                        }
+                    }
+                });
             });
         });
         
         this.log('关节数值已重置', 'info');
     }
 
-    /**
-     * 切换动画模式
-     */
-    toggleAnimation() {
-        this.isAnimationEnabled = !this.isAnimationEnabled;
-        
-        // 更新按钮文本
-        const btn = this.elements.toggleAnimationBtn;
-        btn.textContent = this.isAnimationEnabled ? '关闭动画' : '动画模式';
-        
-        console.log('动画模式:', this.isAnimationEnabled ? '开启' : '关闭');
-    }
 
     /**
      * 处理串口响应
@@ -815,10 +1005,6 @@ class HandSensorApp {
             case 'r':
             case 'R':
                 this.resetValues();
-                break;
-            case 'a':
-            case 'A':
-                this.toggleAnimation();
                 break;
             case 'c':
             case 'C':
@@ -1310,7 +1496,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 检查所有必要的DOM元素是否存在
     const requiredElements = [
-        'connect-btn', 'disconnect-btn', 'reset-values', 'toggle-animation',
+        'connect-btn', 'disconnect-btn', 'reset-values',
         'packet-count', 'update-rate', 'last-update',
         'status-btn', 'system-response',
         'quick-start-btn', 'quick-finish-btn',

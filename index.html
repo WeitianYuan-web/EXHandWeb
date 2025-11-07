@@ -19,16 +19,32 @@
 
         <!-- 主要内容区域 -->
         <main class="main-content">
+            <!-- 映射数据控制 -->
+            <div class="mapping-control-section">
+                <div class="mapping-control-header">
+                    <h2>映射数据控制</h2>
+                </div>
+                <div class="mapping-control-commands">
+                    <div class="command-group">
+                        <button id="mapping-enable-btn" class="btn btn-success" disabled>启用映射</button>
+                        <button id="mapping-disable-btn" class="btn btn-danger" disabled>禁用映射</button>
+                    </div>
+                </div>
+            </div>
+            
             <!-- 手部关节进度条区域 -->
             <div class="hand-joints-container">
                 <div class="joints-header">
                     <h2>手部关节映射数据监控 (0-1.0)</h2>
                     <div class="joints-controls">
                         <button id="reset-values" class="btn btn-secondary">重置数值</button>
-                        <button id="toggle-animation" class="btn btn-secondary">动画模式</button>
                     </div>
                 </div>
-                <div id="hand-joints-layout" class="hand-joints-layout">
+                <div class="hands-container">
+                    <!-- 左手 -->
+                    <div class="hand-layout-container">
+                        <div class="hand-title">左手</div>
+                        <div id="left-hand-joints-layout" class="hand-joints-layout">
                     <!-- 手掌区域 -->
                     <div class="palm-area">
                         <div class="palm-label">手掌</div>
@@ -40,29 +56,29 @@
                         <div class="joint-group">
                             <div class="joint-item">
                                 <span class="joint-name">Yaw</span>
-                                <div class="progress-container">
-                                    <div class="progress-bar">
-                                        <div id="thumb-yaw-bar" class="progress-fill"></div>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="left-thumb-yaw-bar" class="progress-fill"></div>
                                     </div>
-                                    <span id="thumb-yaw-value" class="joint-value">0°</span>
+                                    <span id="left-thumb-yaw-value" class="joint-value">0.000</span>
                                 </div>
                             </div>
                             <div class="joint-item">
                                 <span class="joint-name">Pitch</span>
-                                <div class="progress-container">
-                                    <div class="progress-bar">
-                                        <div id="thumb-pitch-bar" class="progress-fill"></div>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="left-thumb-pitch-bar" class="progress-fill"></div>
                                     </div>
-                                    <span id="thumb-pitch-value" class="joint-value">0°</span>
+                                    <span id="left-thumb-pitch-value" class="joint-value">0.000</span>
                                 </div>
                             </div>
                             <div class="joint-item">
                                 <span class="joint-name">Tip</span>
-                                <div class="progress-container">
-                                    <div class="progress-bar">
-                                        <div id="thumb-tip-bar" class="progress-fill"></div>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="left-thumb-tip-bar" class="progress-fill"></div>
                                     </div>
-                                    <span id="thumb-tip-value" class="joint-value">0°</span>
+                                    <span id="left-thumb-tip-value" class="joint-value">0.000</span>
                                 </div>
                             </div>
                         </div>
@@ -74,29 +90,29 @@
                         <div class="joint-group">
                             <div class="joint-item">
                                 <span class="joint-name">Yaw</span>
-                                <div class="progress-container">
-                                    <div class="progress-bar">
-                                        <div id="index-yaw-bar" class="progress-fill"></div>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="left-index-yaw-bar" class="progress-fill"></div>
                                     </div>
-                                    <span id="index-yaw-value" class="joint-value">0°</span>
+                                    <span id="left-index-yaw-value" class="joint-value">0.000</span>
                                 </div>
                             </div>
                             <div class="joint-item">
                                 <span class="joint-name">Pitch</span>
-                                <div class="progress-container">
-                                    <div class="progress-bar">
-                                        <div id="index-pitch-bar" class="progress-fill"></div>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="left-index-pitch-bar" class="progress-fill"></div>
                                     </div>
-                                    <span id="index-pitch-value" class="joint-value">0°</span>
+                                    <span id="left-index-pitch-value" class="joint-value">0.000</span>
                                 </div>
                             </div>
                             <div class="joint-item">
                                 <span class="joint-name">Tip</span>
-                                <div class="progress-container">
-                                    <div class="progress-bar">
-                                        <div id="index-tip-bar" class="progress-fill"></div>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="left-index-tip-bar" class="progress-fill"></div>
                                     </div>
-                                    <span id="index-tip-value" class="joint-value">0°</span>
+                                    <span id="left-index-tip-value" class="joint-value">0.000</span>
                                 </div>
                             </div>
                         </div>
@@ -108,29 +124,29 @@
                         <div class="joint-group">
                             <div class="joint-item">
                                 <span class="joint-name">Yaw</span>
-                                <div class="progress-container">
-                                    <div class="progress-bar">
-                                        <div id="middle-yaw-bar" class="progress-fill"></div>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="left-middle-yaw-bar" class="progress-fill"></div>
                                     </div>
-                                    <span id="middle-yaw-value" class="joint-value">0°</span>
+                                    <span id="left-middle-yaw-value" class="joint-value">0.000</span>
                                 </div>
                             </div>
                             <div class="joint-item">
                                 <span class="joint-name">Pitch</span>
-                                <div class="progress-container">
-                                    <div class="progress-bar">
-                                        <div id="middle-pitch-bar" class="progress-fill"></div>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="left-middle-pitch-bar" class="progress-fill"></div>
                                     </div>
-                                    <span id="middle-pitch-value" class="joint-value">0°</span>
+                                    <span id="left-middle-pitch-value" class="joint-value">0.000</span>
                                 </div>
                             </div>
                             <div class="joint-item">
                                 <span class="joint-name">Tip</span>
-                                <div class="progress-container">
-                                    <div class="progress-bar">
-                                        <div id="middle-tip-bar" class="progress-fill"></div>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="left-middle-tip-bar" class="progress-fill"></div>
                                     </div>
-                                    <span id="middle-tip-value" class="joint-value">0°</span>
+                                    <span id="left-middle-tip-value" class="joint-value">0.000</span>
                                 </div>
                             </div>
                         </div>
@@ -142,29 +158,29 @@
                         <div class="joint-group">
                             <div class="joint-item">
                                 <span class="joint-name">Yaw</span>
-                                <div class="progress-container">
-                                    <div class="progress-bar">
-                                        <div id="ring-yaw-bar" class="progress-fill"></div>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="left-ring-yaw-bar" class="progress-fill"></div>
                                     </div>
-                                    <span id="ring-yaw-value" class="joint-value">0°</span>
+                                    <span id="left-ring-yaw-value" class="joint-value">0.000</span>
                                 </div>
                             </div>
                             <div class="joint-item">
                                 <span class="joint-name">Pitch</span>
-                                <div class="progress-container">
-                                    <div class="progress-bar">
-                                        <div id="ring-pitch-bar" class="progress-fill"></div>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="left-ring-pitch-bar" class="progress-fill"></div>
                                     </div>
-                                    <span id="ring-pitch-value" class="joint-value">0°</span>
+                                    <span id="left-ring-pitch-value" class="joint-value">0.000</span>
                                 </div>
                             </div>
                             <div class="joint-item">
                                 <span class="joint-name">Tip</span>
-                                <div class="progress-container">
-                                    <div class="progress-bar">
-                                        <div id="ring-tip-bar" class="progress-fill"></div>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="left-ring-tip-bar" class="progress-fill"></div>
                                     </div>
-                                    <span id="ring-tip-value" class="joint-value">0°</span>
+                                    <span id="left-ring-tip-value" class="joint-value">0.000</span>
                                 </div>
                             </div>
                         </div>
@@ -176,29 +192,212 @@
                         <div class="joint-group">
                             <div class="joint-item">
                                 <span class="joint-name">Yaw</span>
-                                <div class="progress-container">
-                                    <div class="progress-bar">
-                                        <div id="pinky-yaw-bar" class="progress-fill"></div>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="left-pinky-yaw-bar" class="progress-fill"></div>
                                     </div>
-                                    <span id="pinky-yaw-value" class="joint-value">0°</span>
+                                    <span id="left-pinky-yaw-value" class="joint-value">0.000</span>
                                 </div>
                             </div>
                             <div class="joint-item">
                                 <span class="joint-name">Pitch</span>
-                                <div class="progress-container">
-                                    <div class="progress-bar">
-                                        <div id="pinky-pitch-bar" class="progress-fill"></div>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="left-pinky-pitch-bar" class="progress-fill"></div>
                                     </div>
-                                    <span id="pinky-pitch-value" class="joint-value">0°</span>
+                                    <span id="left-pinky-pitch-value" class="joint-value">0.000</span>
                                 </div>
                             </div>
                             <div class="joint-item">
                                 <span class="joint-name">Tip</span>
-                                <div class="progress-container">
-                                    <div class="progress-bar">
-                                        <div id="pinky-tip-bar" class="progress-fill"></div>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="left-pinky-tip-bar" class="progress-fill"></div>
                                     </div>
-                                    <span id="pinky-tip-value" class="joint-value">0°</span>
+                                    <span id="left-pinky-tip-value" class="joint-value">0.000</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 右手 -->
+                    <div class="hand-layout-container">
+                        <div class="hand-title">右手</div>
+                        <div id="right-hand-joints-layout" class="hand-joints-layout">
+                    <!-- 手掌区域 -->
+                    <div class="palm-area">
+                        <div class="palm-label">手掌</div>
+                    </div>
+                    
+                    <!-- 大拇指区域 -->
+                    <div class="finger-area thumb-area">
+                        <div class="finger-label">大拇指</div>
+                        <div class="joint-group">
+                            <div class="joint-item">
+                                <span class="joint-name">Yaw</span>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="right-thumb-yaw-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="right-thumb-yaw-value" class="joint-value">0.000</span>
+                                </div>
+                            </div>
+                            <div class="joint-item">
+                                <span class="joint-name">Pitch</span>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="right-thumb-pitch-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="right-thumb-pitch-value" class="joint-value">0.000</span>
+                                </div>
+                            </div>
+                            <div class="joint-item">
+                                <span class="joint-name">Tip</span>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="right-thumb-tip-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="right-thumb-tip-value" class="joint-value">0.000</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 食指区域 -->
+                    <div class="finger-area index-area">
+                        <div class="finger-label">食指</div>
+                        <div class="joint-group">
+                            <div class="joint-item">
+                                <span class="joint-name">Yaw</span>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="right-index-yaw-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="right-index-yaw-value" class="joint-value">0.000</span>
+                                </div>
+                            </div>
+                            <div class="joint-item">
+                                <span class="joint-name">Pitch</span>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="right-index-pitch-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="right-index-pitch-value" class="joint-value">0.000</span>
+                                </div>
+                            </div>
+                            <div class="joint-item">
+                                <span class="joint-name">Tip</span>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="right-index-tip-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="right-index-tip-value" class="joint-value">0.000</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 中指区域 -->
+                    <div class="finger-area middle-area">
+                        <div class="finger-label">中指</div>
+                        <div class="joint-group">
+                            <div class="joint-item">
+                                <span class="joint-name">Yaw</span>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="right-middle-yaw-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="right-middle-yaw-value" class="joint-value">0.000</span>
+                                </div>
+                            </div>
+                            <div class="joint-item">
+                                <span class="joint-name">Pitch</span>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="right-middle-pitch-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="right-middle-pitch-value" class="joint-value">0.000</span>
+                                </div>
+                            </div>
+                            <div class="joint-item">
+                                <span class="joint-name">Tip</span>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="right-middle-tip-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="right-middle-tip-value" class="joint-value">0.000</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 无名指区域 -->
+                    <div class="finger-area ring-area">
+                        <div class="finger-label">无名指</div>
+                        <div class="joint-group">
+                            <div class="joint-item">
+                                <span class="joint-name">Yaw</span>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="right-ring-yaw-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="right-ring-yaw-value" class="joint-value">0.000</span>
+                                </div>
+                            </div>
+                            <div class="joint-item">
+                                <span class="joint-name">Pitch</span>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="right-ring-pitch-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="right-ring-pitch-value" class="joint-value">0.000</span>
+                                </div>
+                            </div>
+                            <div class="joint-item">
+                                <span class="joint-name">Tip</span>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="right-ring-tip-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="right-ring-tip-value" class="joint-value">0.000</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 小指区域 -->
+                    <div class="finger-area pinky-area">
+                        <div class="finger-label">小指</div>
+                        <div class="joint-group">
+                            <div class="joint-item">
+                                <span class="joint-name">Yaw</span>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="right-pinky-yaw-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="right-pinky-yaw-value" class="joint-value">0.000</span>
+                                </div>
+                            </div>
+                            <div class="joint-item">
+                                <span class="joint-name">Pitch</span>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="right-pinky-pitch-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="right-pinky-pitch-value" class="joint-value">0.000</span>
+                                </div>
+                            </div>
+                            <div class="joint-item">
+                                <span class="joint-name">Tip</span>
+                                <div class="progress-container vertical">
+                                    <div class="progress-bar vertical">
+                                        <div id="right-pinky-tip-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="right-pinky-tip-value" class="joint-value">0.000</span>
+                                </div>
+                            </div>
                                 </div>
                             </div>
                         </div>
@@ -212,9 +411,13 @@
                     <h2>系统控制</h2>
                 </div>
                 
+                <!-- 串口管理区域 -->
+                <div class="serial-management-section">
+                    <h3 class="section-title">串口管理</h3>
+                
                 <!-- 串口配置 -->
-                <div class="serial-config">
-                    <h3>串口配置</h3>
+                    <div class="serial-config-section">
+                        <h4 class="subsection-title">串口配置</h4>
                     <div class="config-grid">
                         <div class="config-item">
                             <label for="baud-rate">波特率:</label>
@@ -264,21 +467,25 @@
                         </div>
                     </div>
                     <div class="config-actions">
-                        <button id="save-config" class="btn btn-secondary">保存配置</button>
-                        <button id="load-config" class="btn btn-secondary">加载配置</button>
-                        <button id="reset-config" class="btn btn-secondary">重置默认</button>
+                            <button id="save-config" class="btn btn-secondary btn-sm">保存配置</button>
+                            <button id="load-config" class="btn btn-secondary btn-sm">加载配置</button>
+                            <button id="reset-config" class="btn btn-secondary btn-sm">重置默认</button>
                     </div>
                 </div>
 
                 <!-- 连接控制 -->
-                <div class="connection-controls">
+                    <div class="connection-section">
+                        <h4 class="subsection-title">连接控制</h4>
+                        <div class="connection-buttons">
                     <button id="connect-btn" class="btn btn-primary">连接串口</button>
                     <button id="disconnect-btn" class="btn btn-danger" disabled>断开连接</button>
                     <button id="refresh-ports" class="btn btn-secondary">重新选择端口</button>
+                        </div>
                 </div>
                 
                 <!-- 端口信息显示 -->
-                <div class="port-info">
+                    <div class="port-info-section">
+                        <h4 class="subsection-title">端口信息</h4>
                     <div class="port-status">
                         <span class="port-label">当前端口:</span>
                         <span id="current-port" class="port-name">未连接</span>
@@ -302,6 +509,9 @@
                         </div>
                     </div>
                 </div>
+                </div>
+                
+                <div class="control-panel-content">
 
                 <!-- 系统命令 -->
                 <div class="system-commands">
@@ -397,15 +607,7 @@
                     </div>
                 </div>
 
-                <!-- 映射数据控制 -->
-                <div class="mapping-control-commands">
-                    <h3>映射数据控制</h3>
-                    <div class="command-group">
-                        <button id="mapping-enable-btn" class="btn btn-success" disabled>启用映射</button>
-                        <button id="mapping-disable-btn" class="btn btn-danger" disabled>禁用映射</button>
-                    </div>
                 </div>
-
 
                 <!-- 数据统计 -->
                 <div class="data-stats">
@@ -420,6 +622,226 @@
                     <div class="stat-item">
                         <span class="stat-label">最后更新</span>
                         <span id="last-update" class="stat-value">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 传感器数据可视化区域 -->
+            <div class="sensor-data-container">
+                <div class="sensor-data-header">
+                    <h2>传感器数据监控 (0-65535)</h2>
+                </div>
+                <div class="sensor-hands-container">
+                    <!-- 左手传感器数据 -->
+                    <div class="sensor-hand-layout-container">
+                        <div class="sensor-hand-title">左手</div>
+                        <div id="left-sensor-hand-layout" class="sensor-hand-joints-layout">
+                            <!-- 手掌区域 -->
+                            <div class="palm-area">
+                                <div class="palm-label">手掌</div>
+                            </div>
+                            
+                            <!-- 大拇指区域 -->
+                            <div class="finger-area thumb-area">
+                                <div class="finger-label">大拇指</div>
+                                <div class="joint-group">
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Yaw</span>
+                                        <span id="left-sensor-thumb-yaw-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Pitch</span>
+                                        <span id="left-sensor-thumb-pitch-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Tip</span>
+                                        <span id="left-sensor-thumb-tip-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 食指区域 -->
+                            <div class="finger-area index-area">
+                                <div class="finger-label">食指</div>
+                                <div class="joint-group">
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Yaw</span>
+                                        <span id="left-sensor-index-yaw-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Pitch</span>
+                                        <span id="left-sensor-index-pitch-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Tip</span>
+                                        <span id="left-sensor-index-tip-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 中指区域 -->
+                            <div class="finger-area middle-area">
+                                <div class="finger-label">中指</div>
+                                <div class="joint-group">
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Yaw</span>
+                                        <span id="left-sensor-middle-yaw-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Pitch</span>
+                                        <span id="left-sensor-middle-pitch-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Tip</span>
+                                        <span id="left-sensor-middle-tip-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 无名指区域 -->
+                            <div class="finger-area ring-area">
+                                <div class="finger-label">无名指</div>
+                                <div class="joint-group">
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Yaw</span>
+                                        <span id="left-sensor-ring-yaw-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Pitch</span>
+                                        <span id="left-sensor-ring-pitch-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Tip</span>
+                                        <span id="left-sensor-ring-tip-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 小指区域 -->
+                            <div class="finger-area pinky-area">
+                                <div class="finger-label">小指</div>
+                                <div class="joint-group">
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Yaw</span>
+                                        <span id="left-sensor-pinky-yaw-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Pitch</span>
+                                        <span id="left-sensor-pinky-pitch-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Tip</span>
+                                        <span id="left-sensor-pinky-tip-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 右手传感器数据 -->
+                    <div class="sensor-hand-layout-container">
+                        <div class="sensor-hand-title">右手</div>
+                        <div id="right-sensor-hand-layout" class="sensor-hand-joints-layout">
+                            <!-- 手掌区域 -->
+                            <div class="palm-area">
+                                <div class="palm-label">手掌</div>
+                            </div>
+                            
+                            <!-- 大拇指区域 -->
+                            <div class="finger-area thumb-area">
+                                <div class="finger-label">大拇指</div>
+                                <div class="joint-group">
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Yaw</span>
+                                        <span id="right-sensor-thumb-yaw-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Pitch</span>
+                                        <span id="right-sensor-thumb-pitch-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Tip</span>
+                                        <span id="right-sensor-thumb-tip-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 食指区域 -->
+                            <div class="finger-area index-area">
+                                <div class="finger-label">食指</div>
+                                <div class="joint-group">
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Yaw</span>
+                                        <span id="right-sensor-index-yaw-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Pitch</span>
+                                        <span id="right-sensor-index-pitch-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Tip</span>
+                                        <span id="right-sensor-index-tip-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 中指区域 -->
+                            <div class="finger-area middle-area">
+                                <div class="finger-label">中指</div>
+                                <div class="joint-group">
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Yaw</span>
+                                        <span id="right-sensor-middle-yaw-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Pitch</span>
+                                        <span id="right-sensor-middle-pitch-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Tip</span>
+                                        <span id="right-sensor-middle-tip-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 无名指区域 -->
+                            <div class="finger-area ring-area">
+                                <div class="finger-label">无名指</div>
+                                <div class="joint-group">
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Yaw</span>
+                                        <span id="right-sensor-ring-yaw-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Pitch</span>
+                                        <span id="right-sensor-ring-pitch-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Tip</span>
+                                        <span id="right-sensor-ring-tip-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 小指区域 -->
+                            <div class="finger-area pinky-area">
+                                <div class="finger-label">小指</div>
+                                <div class="joint-group">
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Yaw</span>
+                                        <span id="right-sensor-pinky-yaw-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Pitch</span>
+                                        <span id="right-sensor-pinky-pitch-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                    <div class="sensor-joint-item">
+                                        <span class="joint-name">Tip</span>
+                                        <span id="right-sensor-pinky-tip-value" class="sensor-joint-value">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

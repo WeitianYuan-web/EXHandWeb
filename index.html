@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手部关节传感器可视化</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部标题 -->
+        <header class="header">
+            <h1>手部关节传感器实时监控</h1>
+            <div class="status-indicator">
+                <span id="connection-status" class="status-dot disconnected"></span>
+                <span id="connection-text">未连接</span>
+            </div>
+        </header>
+
+        <!-- 主要内容区域 -->
+        <main class="main-content">
+            <!-- 手部关节进度条区域 -->
+            <div class="hand-joints-container">
+                <div class="joints-header">
+                    <h2>手部关节角度监控</h2>
+                    <div class="joints-controls">
+                        <button id="reset-values" class="btn btn-secondary">重置数值</button>
+                        <button id="toggle-animation" class="btn btn-secondary">动画模式</button>
+                    </div>
+                </div>
+                <div id="hand-joints-layout" class="hand-joints-layout">
+                    <!-- 手掌区域 -->
+                    <div class="palm-area">
+                        <div class="palm-label">手掌</div>
+                    </div>
+                    
+                    <!-- 大拇指区域 -->
+                    <div class="finger-area thumb-area">
+                        <div class="finger-label">大拇指</div>
+                        <div class="joint-group">
+                            <div class="joint-item">
+                                <span class="joint-name">Yaw</span>
+                                <div class="progress-container">
+                                    <div class="progress-bar">
+                                        <div id="thumb-yaw-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="thumb-yaw-value" class="joint-value">0°</span>
+                                </div>
+                            </div>
+                            <div class="joint-item">
+                                <span class="joint-name">Pitch</span>
+                                <div class="progress-container">
+                                    <div class="progress-bar">
+                                        <div id="thumb-pitch-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="thumb-pitch-value" class="joint-value">0°</span>
+                                </div>
+                            </div>
+                            <div class="joint-item">
+                                <span class="joint-name">Tip</span>
+                                <div class="progress-container">
+                                    <div class="progress-bar">
+                                        <div id="thumb-tip-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="thumb-tip-value" class="joint-value">0°</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 食指区域 -->
+                    <div class="finger-area index-area">
+                        <div class="finger-label">食指</div>
+                        <div class="joint-group">
+                            <div class="joint-item">
+                                <span class="joint-name">Yaw</span>
+                                <div class="progress-container">
+                                    <div class="progress-bar">
+                                        <div id="index-yaw-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="index-yaw-value" class="joint-value">0°</span>
+                                </div>
+                            </div>
+                            <div class="joint-item">
+                                <span class="joint-name">Pitch</span>
+                                <div class="progress-container">
+                                    <div class="progress-bar">
+                                        <div id="index-pitch-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="index-pitch-value" class="joint-value">0°</span>
+                                </div>
+                            </div>
+                            <div class="joint-item">
+                                <span class="joint-name">Tip</span>
+                                <div class="progress-container">
+                                    <div class="progress-bar">
+                                        <div id="index-tip-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="index-tip-value" class="joint-value">0°</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 中指区域 -->
+                    <div class="finger-area middle-area">
+                        <div class="finger-label">中指</div>
+                        <div class="joint-group">
+                            <div class="joint-item">
+                                <span class="joint-name">Yaw</span>
+                                <div class="progress-container">
+                                    <div class="progress-bar">
+                                        <div id="middle-yaw-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="middle-yaw-value" class="joint-value">0°</span>
+                                </div>
+                            </div>
+                            <div class="joint-item">
+                                <span class="joint-name">Pitch</span>
+                                <div class="progress-container">
+                                    <div class="progress-bar">
+                                        <div id="middle-pitch-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="middle-pitch-value" class="joint-value">0°</span>
+                                </div>
+                            </div>
+                            <div class="joint-item">
+                                <span class="joint-name">Tip</span>
+                                <div class="progress-container">
+                                    <div class="progress-bar">
+                                        <div id="middle-tip-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="middle-tip-value" class="joint-value">0°</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 无名指区域 -->
+                    <div class="finger-area ring-area">
+                        <div class="finger-label">无名指</div>
+                        <div class="joint-group">
+                            <div class="joint-item">
+                                <span class="joint-name">Yaw</span>
+                                <div class="progress-container">
+                                    <div class="progress-bar">
+                                        <div id="ring-yaw-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="ring-yaw-value" class="joint-value">0°</span>
+                                </div>
+                            </div>
+                            <div class="joint-item">
+                                <span class="joint-name">Pitch</span>
+                                <div class="progress-container">
+                                    <div class="progress-bar">
+                                        <div id="ring-pitch-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="ring-pitch-value" class="joint-value">0°</span>
+                                </div>
+                            </div>
+                            <div class="joint-item">
+                                <span class="joint-name">Tip</span>
+                                <div class="progress-container">
+                                    <div class="progress-bar">
+                                        <div id="ring-tip-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="ring-tip-value" class="joint-value">0°</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 小指区域 -->
+                    <div class="finger-area pinky-area">
+                        <div class="finger-label">小指</div>
+                        <div class="joint-group">
+                            <div class="joint-item">
+                                <span class="joint-name">Yaw</span>
+                                <div class="progress-container">
+                                    <div class="progress-bar">
+                                        <div id="pinky-yaw-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="pinky-yaw-value" class="joint-value">0°</span>
+                                </div>
+                            </div>
+                            <div class="joint-item">
+                                <span class="joint-name">Pitch</span>
+                                <div class="progress-container">
+                                    <div class="progress-bar">
+                                        <div id="pinky-pitch-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="pinky-pitch-value" class="joint-value">0°</span>
+                                </div>
+                            </div>
+                            <div class="joint-item">
+                                <span class="joint-name">Tip</span>
+                                <div class="progress-container">
+                                    <div class="progress-bar">
+                                        <div id="pinky-tip-bar" class="progress-fill"></div>
+                                    </div>
+                                    <span id="pinky-tip-value" class="joint-value">0°</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 控制面板 -->
+            <div class="control-panel">
+                <div class="panel-header">
+                    <h2>系统控制</h2>
+                </div>
+                
+                <!-- 串口配置 -->
+                <div class="serial-config">
+                    <h3>串口配置</h3>
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <label for="baud-rate">波特率:</label>
+                            <select id="baud-rate">
+                                <option value="9600">9600</option>
+                                <option value="19200">19200</option>
+                                <option value="38400">38400</option>
+                                <option value="57600">57600</option>
+                                <option value="115200" selected>115200</option>
+                                <option value="230400">230400</option>
+                                <option value="460800">460800</option>
+                                <option value="921600">921600</option>
+                            </select>
+                        </div>
+                        <div class="config-item">
+                            <label for="data-bits">数据位:</label>
+                            <select id="data-bits">
+                                <option value="7">7</option>
+                                <option value="8" selected>8</option>
+                            </select>
+                        </div>
+                        <div class="config-item">
+                            <label for="stop-bits">停止位:</label>
+                            <select id="stop-bits">
+                                <option value="1" selected>1</option>
+                                <option value="2">2</option>
+                            </select>
+                        </div>
+                        <div class="config-item">
+                            <label for="parity">校验位:</label>
+                            <select id="parity">
+                                <option value="none" selected>无</option>
+                                <option value="even">偶校验</option>
+                                <option value="odd">奇校验</option>
+                            </select>
+                        </div>
+                        <div class="config-item">
+                            <label for="flow-control">流控制:</label>
+                            <select id="flow-control">
+                                <option value="none" selected>无</option>
+                                <option value="hardware">硬件</option>
+                            </select>
+                        </div>
+                        <div class="config-item">
+                            <label for="timeout">超时(ms):</label>
+                            <input type="number" id="timeout" min="100" max="10000" value="1000">
+                        </div>
+                    </div>
+                    <div class="config-actions">
+                        <button id="save-config" class="btn btn-secondary">保存配置</button>
+                        <button id="load-config" class="btn btn-secondary">加载配置</button>
+                        <button id="reset-config" class="btn btn-secondary">重置默认</button>
+                    </div>
+                </div>
+
+                <!-- 连接控制 -->
+                <div class="connection-controls">
+                    <button id="connect-btn" class="btn btn-primary">连接串口</button>
+                    <button id="disconnect-btn" class="btn btn-danger" disabled>断开连接</button>
+                    <button id="refresh-ports" class="btn btn-secondary">重新选择端口</button>
+                </div>
+                
+                <!-- 端口信息显示 -->
+                <div class="port-info">
+                    <div class="port-status">
+                        <span class="port-label">当前端口:</span>
+                        <span id="current-port" class="port-name">未连接</span>
+                    </div>
+                    <div class="port-details" id="port-details" style="display: none;">
+                        <div class="detail-item">
+                            <span class="detail-label">端口ID:</span>
+                            <span id="port-id" class="detail-value">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">制造商:</span>
+                            <span id="port-manufacturer" class="detail-value">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">产品ID:</span>
+                            <span id="port-product-id" class="detail-value">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">供应商ID:</span>
+                            <span id="port-vendor-id" class="detail-value">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 系统命令 -->
+                <div class="system-commands">
+                    <h3>系统命令</h3>
+                    <div class="command-group">
+                        <button id="ping-btn" class="btn btn-secondary" disabled>心跳测试</button>
+                        <button id="version-btn" class="btn btn-secondary" disabled>获取版本</button>
+                        <button id="status-btn" class="btn btn-secondary" disabled>获取状态</button>
+                    </div>
+                    <div id="system-response" class="response-display"></div>
+                </div>
+
+                <!-- 校准功能 -->
+                <div class="calibration-commands">
+                    <h3>校准功能</h3>
+                    <div class="calibration-tabs">
+                        <button class="tab-btn active" data-tab="5point">5点校准</button>
+                        <button class="tab-btn" data-tab="quick">快速校准</button>
+                        <button class="tab-btn" data-tab="anchor">锚定点校准</button>
+                    </div>
+                    
+                    <!-- 5点校准 -->
+                    <div id="5point-tab" class="tab-content active">
+                        <div class="command-group">
+                            <button id="cal-5p-start" class="btn btn-warning" disabled>开始校准</button>
+                            <button id="cal-5p-next" class="btn btn-warning" disabled>下一步</button>
+                            <button id="cal-5p-reset" class="btn btn-secondary" disabled>重置</button>
+                        </div>
+                        <div class="calibration-status">
+                            <span id="cal-5p-status">未开始</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 快速校准 -->
+                    <div id="quick-tab" class="tab-content">
+                        <div class="command-group">
+                            <button id="cal-quick-start" class="btn btn-warning" disabled>开始校准</button>
+                            <button id="cal-quick-finish" class="btn btn-warning" disabled>完成校准</button>
+                            <button id="cal-quick-reset" class="btn btn-secondary" disabled>重置</button>
+                        </div>
+                        <div class="calibration-status">
+                            <span id="cal-quick-status">未开始</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 锚定点校准 -->
+                    <div id="anchor-tab" class="tab-content">
+                        <div class="anchor-controls">
+                            <div class="finger-selection">
+                                <label>选择手指1:</label>
+                                <select id="anchor-finger1">
+                                    <option value="0">大拇指</option>
+                                    <option value="1">食指</option>
+                                    <option value="2">中指</option>
+                                    <option value="3">无名指</option>
+                                    <option value="4">小指</option>
+                                </select>
+                            </div>
+                            <div class="finger-selection">
+                                <label>选择手指2:</label>
+                                <select id="anchor-finger2">
+                                    <option value="0">大拇指</option>
+                                    <option value="1">食指</option>
+                                    <option value="2">中指</option>
+                                    <option value="3">无名指</option>
+                                    <option value="4">小指</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="command-group">
+                            <button id="cal-anchor-start" class="btn btn-warning" disabled>开始校准</button>
+                            <button id="cal-anchor-record" class="btn btn-warning" disabled>记录点</button>
+                            <button id="cal-anchor-apply" class="btn btn-warning" disabled>应用参数</button>
+                            <button id="cal-anchor-reset" class="btn btn-secondary" disabled>重置</button>
+                        </div>
+                        <div class="calibration-status">
+                            <span id="cal-anchor-status">未开始</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 传感器控制 -->
+                <div class="sensor-commands">
+                    <h3>传感器控制</h3>
+                    <div class="command-group">
+                        <button id="sensor-print-on" class="btn btn-success" disabled>开启数据打印</button>
+                        <button id="sensor-print-off" class="btn btn-danger" disabled>关闭数据打印</button>
+                        <button id="sensor-get-data" class="btn btn-primary" disabled>获取数据</button>
+                    </div>
+                </div>
+
+                <!-- 校准参数管理 -->
+                <div class="parameter-commands">
+                    <h3>校准参数管理</h3>
+                    <div class="parameter-controls">
+                        <div class="parameter-input">
+                            <label>传感器索引:</label>
+                            <input type="number" id="param-sensor-idx" min="0" max="14" value="0">
+                        </div>
+                        <div class="parameter-input">
+                            <label>最小值:</label>
+                            <input type="number" id="param-min-value" min="0" max="65535" value="18000">
+                        </div>
+                        <div class="parameter-input">
+                            <label>最大值:</label>
+                            <input type="number" id="param-max-value" min="0" max="65535" value="20480">
+                        </div>
+                    </div>
+                    <div class="command-group">
+                        <button id="param-get" class="btn btn-secondary" disabled>获取参数</button>
+                        <button id="param-set" class="btn btn-warning" disabled>设置参数</button>
+                        <button id="param-save" class="btn btn-success" disabled>保存参数</button>
+                        <button id="param-load" class="btn btn-primary" disabled>加载参数</button>
+                    </div>
+                    <div id="parameter-response" class="response-display"></div>
+                </div>
+
+                <!-- 数据统计 -->
+                <div class="data-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">数据包计数</span>
+                        <span id="packet-count" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">更新频率</span>
+                        <span id="update-rate" class="stat-value">0 Hz</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">最后更新</span>
+                        <span id="last-update" class="stat-value">--</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 底部信息 -->
+        <footer class="footer">
+            <p>手部关节传感器可视化系统 v1.0 | 支持15个关节角度实时监控</p>
+        </footer>
+    </div>
+
+    <script src="serial.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
+

@@ -120,14 +120,26 @@ class HandSensorApp {
      */
     setupEventListeners() {
         try {
+            console.log('开始设置事件监听器...');
+            
             // 连接按钮
             if (this.elements.connectBtn) {
-                this.elements.connectBtn.addEventListener('click', () => this.connectSerial());
+                this.elements.connectBtn.addEventListener('click', () => {
+                    console.log('点击连接按钮');
+                    this.connectSerial();
+                });
+            } else {
+                console.error('未找到 connect-btn 按钮');
             }
             
             // 断开连接按钮
             if (this.elements.disconnectBtn) {
-                this.elements.disconnectBtn.addEventListener('click', () => this.disconnectSerial());
+                this.elements.disconnectBtn.addEventListener('click', () => {
+                    console.log('点击断开连接按钮');
+                    this.disconnectSerial();
+                });
+            } else {
+                console.error('未找到 disconnect-btn 按钮');
             }
             
             // 重置数值按钮
@@ -143,79 +155,250 @@ class HandSensorApp {
             // 系统命令按钮
             const statusBtn = document.getElementById('status-btn');
             if (statusBtn) {
-                statusBtn.addEventListener('click', () => this.getStatus());
+                statusBtn.addEventListener('click', async () => {
+                    try {
+                        await this.getStatus();
+                    } catch (error) {
+                        console.error('查询状态失败:', error);
+                        this.log('查询状态失败: ' + error.message, 'error');
+                    }
+                });
+            } else {
+                console.warn('未找到 status-btn 按钮');
             }
             
             // 快速校准按钮
             const quickStartBtn = document.getElementById('quick-start-btn');
             if (quickStartBtn) {
-                quickStartBtn.addEventListener('click', () => this.startQuickCalibration());
+                quickStartBtn.addEventListener('click', async () => {
+                    try {
+                        await this.startQuickCalibration();
+                    } catch (error) {
+                        console.error('快速校准开始失败:', error);
+                        this.log('快速校准开始失败: ' + error.message, 'error');
+                    }
+                });
+            } else {
+                console.warn('未找到 quick-start-btn 按钮');
             }
+            
             const quickFinishBtn = document.getElementById('quick-finish-btn');
             if (quickFinishBtn) {
-                quickFinishBtn.addEventListener('click', () => this.finishQuickCalibration());
+                quickFinishBtn.addEventListener('click', async () => {
+                    try {
+                        await this.finishQuickCalibration();
+                    } catch (error) {
+                        console.error('快速校准完成失败:', error);
+                        this.log('快速校准完成失败: ' + error.message, 'error');
+                    }
+                });
+            } else {
+                console.warn('未找到 quick-finish-btn 按钮');
             }
             
             // 锚定点校准按钮
             const anchorStartBtn = document.getElementById('anchor-start-btn');
             if (anchorStartBtn) {
-                anchorStartBtn.addEventListener('click', () => this.startAnchorCalibration());
+                anchorStartBtn.addEventListener('click', async (e) => {
+                    if (anchorStartBtn.disabled) {
+                        this.log('按钮已禁用，请先连接串口', 'warning');
+                        this.showError('请先连接串口');
+                        return;
+                    }
+                    try {
+                        console.log('点击锚定点校准开始按钮');
+                        await this.startAnchorCalibration();
+                    } catch (error) {
+                        console.error('锚定点校准开始失败:', error);
+                        this.log('锚定点校准开始失败: ' + error.message, 'error');
+                    }
+                });
+            } else {
+                console.error('未找到 anchor-start-btn 按钮');
             }
+            
             const anchorRecordBtn = document.getElementById('anchor-record-btn');
             if (anchorRecordBtn) {
-                anchorRecordBtn.addEventListener('click', () => this.recordAnchorPoint());
+                anchorRecordBtn.addEventListener('click', async (e) => {
+                    if (anchorRecordBtn.disabled) {
+                        this.log('按钮已禁用，请先连接串口', 'warning');
+                        this.showError('请先连接串口');
+                        return;
+                    }
+                    try {
+                        console.log('点击记录锚定点按钮');
+                        await this.recordAnchorPoint();
+                    } catch (error) {
+                        console.error('记录锚定点失败:', error);
+                        this.log('记录锚定点失败: ' + error.message, 'error');
+                    }
+                });
+            } else {
+                console.error('未找到 anchor-record-btn 按钮');
             }
+            
             const anchorApplyBtn = document.getElementById('anchor-apply-btn');
             if (anchorApplyBtn) {
-                anchorApplyBtn.addEventListener('click', () => this.applyAnchorCalibration());
+                anchorApplyBtn.addEventListener('click', async (e) => {
+                    if (anchorApplyBtn.disabled) {
+                        this.log('按钮已禁用，请先连接串口', 'warning');
+                        this.showError('请先连接串口');
+                        return;
+                    }
+                    try {
+                        console.log('点击应用锚定点校准按钮');
+                        await this.applyAnchorCalibration();
+                    } catch (error) {
+                        console.error('应用锚定点校准失败:', error);
+                        this.log('应用锚定点校准失败: ' + error.message, 'error');
+                    }
+                });
+            } else {
+                console.error('未找到 anchor-apply-btn 按钮');
             }
             
             // 校准数据管理按钮
             const saveCalibrationBtn = document.getElementById('save-calibration-btn');
             if (saveCalibrationBtn) {
-                saveCalibrationBtn.addEventListener('click', () => this.saveCalibration());
+                saveCalibrationBtn.addEventListener('click', async () => {
+                    try {
+                        await this.saveCalibration();
+                    } catch (error) {
+                        console.error('保存校准失败:', error);
+                        this.log('保存校准失败: ' + error.message, 'error');
+                    }
+                });
+            } else {
+                console.warn('未找到 save-calibration-btn 按钮');
             }
+            
             const loadCalibrationBtn = document.getElementById('load-calibration-btn');
             if (loadCalibrationBtn) {
-                loadCalibrationBtn.addEventListener('click', () => this.loadCalibration());
+                loadCalibrationBtn.addEventListener('click', async () => {
+                    try {
+                        await this.loadCalibration();
+                    } catch (error) {
+                        console.error('加载校准失败:', error);
+                        this.log('加载校准失败: ' + error.message, 'error');
+                    }
+                });
+            } else {
+                console.warn('未找到 load-calibration-btn 按钮');
             }
+            
             const clearCalibrationBtn = document.getElementById('clear-calibration-btn');
             if (clearCalibrationBtn) {
-                clearCalibrationBtn.addEventListener('click', () => this.clearCalibration());
+                clearCalibrationBtn.addEventListener('click', async () => {
+                    try {
+                        await this.clearCalibration();
+                    } catch (error) {
+                        console.error('清除校准失败:', error);
+                        this.log('清除校准失败: ' + error.message, 'error');
+                    }
+                });
+            } else {
+                console.warn('未找到 clear-calibration-btn 按钮');
             }
+            
             const resetCalibrationBtn = document.getElementById('reset-calibration-btn');
             if (resetCalibrationBtn) {
-                resetCalibrationBtn.addEventListener('click', () => this.resetCalibration());
+                resetCalibrationBtn.addEventListener('click', async () => {
+                    try {
+                        await this.resetCalibration();
+                    } catch (error) {
+                        console.error('重置校准失败:', error);
+                        this.log('重置校准失败: ' + error.message, 'error');
+                    }
+                });
+            } else {
+                console.warn('未找到 reset-calibration-btn 按钮');
             }
             
             // CAN控制按钮
             const canEnableBtn = document.getElementById('can-enable-btn');
             if (canEnableBtn) {
-                canEnableBtn.addEventListener('click', () => this.enableCAN());
+                canEnableBtn.addEventListener('click', async () => {
+                    try {
+                        await this.enableCAN();
+                    } catch (error) {
+                        console.error('启用CAN失败:', error);
+                        this.log('启用CAN失败: ' + error.message, 'error');
+                    }
+                });
+            } else {
+                console.warn('未找到 can-enable-btn 按钮');
             }
+            
             const canDisableBtn = document.getElementById('can-disable-btn');
             if (canDisableBtn) {
-                canDisableBtn.addEventListener('click', () => this.disableCAN());
+                canDisableBtn.addEventListener('click', async () => {
+                    try {
+                        await this.disableCAN();
+                    } catch (error) {
+                        console.error('禁用CAN失败:', error);
+                        this.log('禁用CAN失败: ' + error.message, 'error');
+                    }
+                });
+            } else {
+                console.warn('未找到 can-disable-btn 按钮');
             }
             
             // 传感器控制按钮
             const sensorEnableBtn = document.getElementById('sensor-enable-btn');
             if (sensorEnableBtn) {
-                sensorEnableBtn.addEventListener('click', () => this.enableSensor());
+                sensorEnableBtn.addEventListener('click', async () => {
+                    try {
+                        await this.enableSensor();
+                    } catch (error) {
+                        console.error('启用传感器失败:', error);
+                        this.log('启用传感器失败: ' + error.message, 'error');
+                    }
+                });
+            } else {
+                console.warn('未找到 sensor-enable-btn 按钮');
             }
+            
             const sensorDisableBtn = document.getElementById('sensor-disable-btn');
             if (sensorDisableBtn) {
-                sensorDisableBtn.addEventListener('click', () => this.disableSensor());
+                sensorDisableBtn.addEventListener('click', async () => {
+                    try {
+                        await this.disableSensor();
+                    } catch (error) {
+                        console.error('禁用传感器失败:', error);
+                        this.log('禁用传感器失败: ' + error.message, 'error');
+                    }
+                });
+            } else {
+                console.warn('未找到 sensor-disable-btn 按钮');
             }
             
             // 映射数据控制按钮
             const mappingEnableBtn = document.getElementById('mapping-enable-btn');
             if (mappingEnableBtn) {
-                mappingEnableBtn.addEventListener('click', () => this.enableMapping());
+                mappingEnableBtn.addEventListener('click', async () => {
+                    try {
+                        await this.enableMapping();
+                    } catch (error) {
+                        console.error('启用映射失败:', error);
+                        this.log('启用映射失败: ' + error.message, 'error');
+                    }
+                });
+            } else {
+                console.warn('未找到 mapping-enable-btn 按钮');
             }
+            
             const mappingDisableBtn = document.getElementById('mapping-disable-btn');
             if (mappingDisableBtn) {
-                mappingDisableBtn.addEventListener('click', () => this.disableMapping());
+                mappingDisableBtn.addEventListener('click', async () => {
+                    try {
+                        await this.disableMapping();
+                    } catch (error) {
+                        console.error('禁用映射失败:', error);
+                        this.log('禁用映射失败: ' + error.message, 'error');
+                    }
+                });
+            } else {
+                console.warn('未找到 mapping-disable-btn 按钮');
             }
             
             // 清空日志按钮
@@ -397,10 +580,24 @@ class HandSensorApp {
             'mapping-enable-btn', 'mapping-disable-btn'
         ];
         
+        let enabledCount = 0;
+        let disabledCount = 0;
+        
         commandButtonIds.forEach(id => {
             const btn = document.getElementById(id);
-            if (btn) btn.disabled = !enabled;
+            if (btn) {
+                btn.disabled = !enabled;
+                if (enabled) {
+                    enabledCount++;
+                } else {
+                    disabledCount++;
+                }
+            } else {
+                console.warn(`未找到按钮: ${id}`);
+            }
         });
+        
+        console.log(`按钮状态更新: ${enabled ? '启用' : '禁用'} - 已处理 ${enabled ? enabledCount : disabledCount} 个按钮`);
     }
 
     /**
@@ -650,6 +847,11 @@ class HandSensorApp {
      * @param {string} type - 日志类型 (info, success, error, warning)
      */
     log(message, type = 'info') {
+        // 确保logContainer已初始化
+        if (!this.logContainer) {
+            this.logContainer = document.getElementById('log-container');
+        }
+        
         const timestamp = new Date().toLocaleTimeString();
         const logEntry = document.createElement('div');
         logEntry.className = `log-entry log-${type}`;
@@ -765,90 +967,189 @@ class HandSensorApp {
 
     // 系统命令方法
     async getStatus() {
+        if (!this.serialManager || !this.serialManager.getConnectionStatus()) {
+            this.log('错误: 请先连接串口', 'error');
+            this.showError('请先连接串口');
+            return;
+        }
         this.log('发送查询状态命令', 'info');
         await this.serialManager.getStatus();
     }
 
     // 快速校准方法
     async startQuickCalibration() {
+        if (!this.serialManager || !this.serialManager.getConnectionStatus()) {
+            this.log('错误: 请先连接串口', 'error');
+            this.showError('请先连接串口');
+            return;
+        }
         this.log('发送快速校准开始命令', 'info');
         await this.serialManager.startQuickCalibration();
     }
 
     async finishQuickCalibration() {
+        if (!this.serialManager || !this.serialManager.getConnectionStatus()) {
+            this.log('错误: 请先连接串口', 'error');
+            this.showError('请先连接串口');
+            return;
+        }
         this.log('发送快速校准完成命令', 'info');
         await this.serialManager.finishQuickCalibration();
     }
 
     // 锚定点校准方法
     async startAnchorCalibration() {
+        if (!this.serialManager || !this.serialManager.getConnectionStatus()) {
+            this.log('错误: 请先连接串口', 'error');
+            this.showError('请先连接串口');
+            return;
+        }
+        
         const hand = parseInt(document.getElementById('anchor-hand')?.value || 0);
-        const finger1 = parseInt(document.getElementById('anchor-finger1')?.value || 1);
-        const finger2 = parseInt(document.getElementById('anchor-finger2')?.value || 2);
-        this.log(`发送锚定点校准开始命令: 手侧=${hand}, 手指=[${finger1}, ${finger2}]`, 'info');
-        await this.serialManager.startAnchorCalibration(hand, [finger1, finger2]);
+        
+        // 收集所有选中的手指（排除"不校准"选项，即值为0的）
+        const fingers = [];
+        const finger1 = parseInt(document.getElementById('anchor-finger1')?.value || 0);
+        const finger2 = parseInt(document.getElementById('anchor-finger2')?.value || 0);
+        const finger3 = parseInt(document.getElementById('anchor-finger3')?.value || 0);
+        const finger4 = parseInt(document.getElementById('anchor-finger4')?.value || 0);
+        
+        if (finger1 > 0) fingers.push(finger1);
+        if (finger2 > 0) fingers.push(finger2);
+        if (finger3 > 0) fingers.push(finger3);
+        if (finger4 > 0) fingers.push(finger4);
+        
+        if (fingers.length === 0) {
+            this.log('错误: 至少需要选择一根手指进行校准', 'error');
+            this.showError('至少需要选择一根手指进行校准');
+            return;
+        }
+        
+        const fingerNames = { 1: '食指', 2: '中指', 3: '无名指', 4: '小指' };
+        this.log(`发送锚定点校准开始命令: 手侧=${hand === 0 ? '右手' : '左手'}, 手指=[${fingers.map(f => fingerNames[f]).join(', ')}]`, 'info');
+        await this.serialManager.startAnchorCalibration(hand, fingers);
     }
 
     async recordAnchorPoint() {
+        if (!this.serialManager || !this.serialManager.getConnectionStatus()) {
+            this.log('错误: 请先连接串口', 'error');
+            this.showError('请先连接串口');
+            return;
+        }
         this.log('发送记录锚定点命令', 'info');
         await this.serialManager.recordAnchorPoint();
     }
 
     async applyAnchorCalibration() {
+        if (!this.serialManager || !this.serialManager.getConnectionStatus()) {
+            this.log('错误: 请先连接串口', 'error');
+            this.showError('请先连接串口');
+            return;
+        }
         this.log('发送应用锚定点校准命令', 'info');
         await this.serialManager.applyAnchorCalibration();
     }
 
     // 校准数据管理方法
     async saveCalibration() {
+        if (!this.serialManager || !this.serialManager.getConnectionStatus()) {
+            this.log('错误: 请先连接串口', 'error');
+            this.showError('请先连接串口');
+            return;
+        }
         this.log('发送保存校准数据命令', 'info');
         await this.serialManager.saveCalibration();
     }
 
     async loadCalibration() {
+        if (!this.serialManager || !this.serialManager.getConnectionStatus()) {
+            this.log('错误: 请先连接串口', 'error');
+            this.showError('请先连接串口');
+            return;
+        }
         this.log('发送加载校准数据命令', 'info');
         await this.serialManager.loadCalibration();
     }
 
     async clearCalibration() {
+        if (!this.serialManager || !this.serialManager.getConnectionStatus()) {
+            this.log('错误: 请先连接串口', 'error');
+            this.showError('请先连接串口');
+            return;
+        }
         this.log('发送清除校准数据命令', 'info');
         await this.serialManager.clearCalibration();
     }
 
     async resetCalibration() {
+        if (!this.serialManager || !this.serialManager.getConnectionStatus()) {
+            this.log('错误: 请先连接串口', 'error');
+            this.showError('请先连接串口');
+            return;
+        }
         this.log('发送重置校准命令', 'info');
         await this.serialManager.resetCalibration();
     }
 
     // CAN控制方法
     async enableCAN() {
+        if (!this.serialManager || !this.serialManager.getConnectionStatus()) {
+            this.log('错误: 请先连接串口', 'error');
+            this.showError('请先连接串口');
+            return;
+        }
         this.log('发送启用CAN控制命令', 'info');
         await this.serialManager.enableCAN();
     }
 
     async disableCAN() {
+        if (!this.serialManager || !this.serialManager.getConnectionStatus()) {
+            this.log('错误: 请先连接串口', 'error');
+            this.showError('请先连接串口');
+            return;
+        }
         this.log('发送禁用CAN控制命令', 'info');
         await this.serialManager.disableCAN();
     }
 
     // 传感器控制方法
     async enableSensor() {
+        if (!this.serialManager || !this.serialManager.getConnectionStatus()) {
+            this.log('错误: 请先连接串口', 'error');
+            this.showError('请先连接串口');
+            return;
+        }
         this.log('发送启用传感器数据推送命令', 'info');
         await this.serialManager.enableSensor();
     }
 
     async disableSensor() {
+        if (!this.serialManager || !this.serialManager.getConnectionStatus()) {
+            this.log('错误: 请先连接串口', 'error');
+            this.showError('请先连接串口');
+            return;
+        }
         this.log('发送禁用传感器数据推送命令', 'info');
         await this.serialManager.disableSensor();
     }
 
     // 映射数据控制方法
     async enableMapping() {
+        if (!this.serialManager || !this.serialManager.getConnectionStatus()) {
+            this.log('错误: 请先连接串口', 'error');
+            this.showError('请先连接串口');
+            return;
+        }
         this.log('发送启用映射数据推送命令', 'info');
         await this.serialManager.enableMapping();
     }
 
     async disableMapping() {
+        if (!this.serialManager || !this.serialManager.getConnectionStatus()) {
+            this.log('错误: 请先连接串口', 'error');
+            this.showError('请先连接串口');
+            return;
+        }
         this.log('发送禁用映射数据推送命令', 'info');
         await this.serialManager.disableMapping();
     }
@@ -1013,7 +1314,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'packet-count', 'update-rate', 'last-update',
         'status-btn', 'system-response',
         'quick-start-btn', 'quick-finish-btn',
-        'anchor-hand', 'anchor-finger1', 'anchor-finger2',
+        'anchor-hand', 'anchor-finger1', 'anchor-finger2', 'anchor-finger3', 'anchor-finger4',
         'anchor-start-btn', 'anchor-record-btn', 'anchor-apply-btn',
         'save-calibration-btn', 'load-calibration-btn', 'clear-calibration-btn', 'reset-calibration-btn',
         'can-enable-btn', 'can-disable-btn',

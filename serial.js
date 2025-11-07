@@ -9,6 +9,7 @@ class SerialManager {
         this.reader = null;
         this.writer = null;
         this.isConnected = false;
+        this.isReading = false;
         this.dataCallback = null;
         this.errorCallback = null;
         this.responseCallback = null;
@@ -17,10 +18,15 @@ class SerialManager {
         this.lastUpdateTime = 0;
         this.updateRate = 0;
         
+        // 数据缓冲区 - 用于处理分包数据
+        this.readBuffer = new Uint8Array(0);
+        this.maxBufferSize = 1024; // 最大缓冲区大小
+        
         // 数据帧协议配置
-        this.FRAME_HEADER = [0xAA, 0x55];
-        this.FRAME_TAIL = [0x0D, 0x0A];
-        this.MAX_DATA_LENGTH = 246;
+        this.FRAME_HEADER = 0xAA;  // 单字节帧头
+        this.FRAME_TAIL = 0x55;    // 单字节帧尾
+        this.MIN_FRAME_LEN = 5;    // 最小帧长度：头1+类型1+长度1+校验1+尾1
+        this.MAX_DATA_LENGTH = 255; // 最大数据长度
         
         // 串口配置 - 默认值
         this.serialConfig = {
@@ -41,54 +47,59 @@ class SerialManager {
             vendorId: null
         };
         
-        // 命令码定义
+        // 命令码定义（与Python代码保持一致）
         this.COMMANDS = {
-            // 系统命令
-            PING: 0x01,
-            GET_VERSION: 0x02,
-            GET_STATUS: 0x03,
+            // 系统控制命令
+            CMD_ENABLE: 0x01,
+            CMD_DISABLE: 0x02,
+            CMD_QUICK_START: 0x03,
+            CMD_QUICK_FINISH: 0x04,
+            CMD_ANCHOR_START: 0x05,
+            CMD_RECORD: 0x06,
+            CMD_APPLY: 0x07,
+            CMD_SAVE: 0x08,
+            CMD_LOAD: 0x09,
+            CMD_CLEAR: 0x0A,
+            CMD_STATUS: 0x0B,
+            CMD_RESET: 0x0C,
+            CMD_CAN_ENABLE: 0x0D,
+            CMD_CAN_DISABLE: 0x0E,
+            CMD_SENSOR_ENABLE: 0x0F,
+            CMD_SENSOR_DISABLE: 0x10,
+            CMD_MAPPING_ENABLE: 0x11,
+            CMD_MAPPING_DISABLE: 0x12,
             
-            // 5点校准命令
-            CAL_5P_START: 0x10,
-            CAL_5P_NEXT: 0x11,
-            CAL_5P_RESET: 0x12,
-            CAL_5P_GET_STATE: 0x13,
+            // 数据通知类型
+            CMD_SENSOR_DATA: 0x20,      // 传感器数据通知
+            CMD_MAPPING_DATA: 0x21,      // 映射数据通知
             
-            // 快速校准命令
-            CAL_QUICK_START: 0x20,
-            CAL_QUICK_FINISH: 0x21,
-            CAL_QUICK_RESET: 0x22,
-            CAL_QUICK_GET_STATE: 0x23,
-            
-            // 锚定点校准命令
-            CAL_ANCHOR_START: 0x30,
-            CAL_ANCHOR_RECORD: 0x31,
-            CAL_ANCHOR_APPLY: 0x32,
-            CAL_ANCHOR_RESET: 0x33,
-            CAL_ANCHOR_GET_STATE: 0x34,
-            
-            // 传感器数据命令
-            SENSOR_PRINT_ON: 0x40,
-            SENSOR_PRINT_OFF: 0x41,
-            SENSOR_GET_DATA: 0x42,
-            
-            // 校准参数命令
-            PARAM_GET: 0x50,
-            PARAM_SET: 0x51,
-            PARAM_SAVE: 0x52,
-            PARAM_LOAD: 0x53,
-            
-            // 响应码
-            RESPONSE_OK: 0xF0,
-            RESPONSE_ERROR: 0xF1,
-            RESPONSE_DATA: 0xF2
+            // 结果码
+            RESULT_SUCCESS: 0x00,
+            RESULT_FAIL: 0x01,
+            RESULT_UNKNOWN_CMD: 0xFD,
+            RESULT_NOT_ENABLED: 0xFE,
+            RESULT_CHECKSUM_ERROR: 0xFF
         };
         
-        // 绑定方法
-        this.connect = this.connect.bind(this);
-        this.disconnect = this.disconnect.bind(this);
-        this.onDataReceived = this.onDataReceived.bind(this);
-        this.onError = this.onError.bind(this);
+        // 关节名称列表（15个关节）
+        this.JOINT_NAMES = [
+            "Thumb-Yaw",
+            "Thumb-Pitch",
+            "Thumb-Tip",
+            "Index-Yaw",
+            "Index-Pitch",
+            "Index-Tip",
+            "Middle-Yaw",
+            "Middle-Pitch",
+            "Middle-Tip",
+            "Ring-Yaw",
+            "Ring-Pitch",
+            "Ring-Tip",
+            "Little-Yaw",
+            "Little-Pitch",
+            "Little-Tip"
+        ];
+        
     }
 
     /**
@@ -153,6 +164,9 @@ class SerialManager {
             this.reader = this.port.readable.getReader();
             this.writer = this.port.writable.getWriter();
 
+            // 清空缓冲区
+            this.readBuffer = new Uint8Array(0);
+            
             this.isConnected = true;
             this.lastUpdateTime = Date.now();
             
@@ -164,14 +178,29 @@ class SerialManager {
                 this.portInfoCallback(this.portInfo);
             }
             
+            // 连接成功后自动发送启用数据帧模式命令
+            try {
+                await this.enable();
+            } catch (error) {
+                console.warn('自动启用数据帧模式失败:', error);
+                // 即使启用失败，也不影响连接状态
+            }
+            
             return true;
 
         } catch (error) {
             console.error('串口连接失败:', error);
             this.isConnected = false;
-            if (this.errorCallback) {
-                this.errorCallback(error);
+            
+            // 如果用户取消了端口选择，不触发错误回调
+            if (error.name !== 'NotFoundError' && error.name !== 'AbortError') {
+                if (this.errorCallback) {
+                    this.errorCallback(error);
+                }
+            } else {
+                console.log('用户取消了端口选择');
             }
+            
             return false;
         }
     }
@@ -182,21 +211,42 @@ class SerialManager {
     async disconnect() {
         try {
             this.isConnected = false;
+            this.isReading = false;
             
+            // 停止读取循环
             if (this.reader) {
-                await this.reader.cancel();
+                try {
+                    await this.reader.cancel();
+                    await this.reader.releaseLock();
+                } catch (error) {
+                    console.warn('释放读取器时出错:', error);
+                }
                 this.reader = null;
             }
             
+            // 关闭写入器
             if (this.writer) {
-                await this.writer.close();
+                try {
+                    await this.writer.close();
+                    await this.writer.releaseLock();
+                } catch (error) {
+                    console.warn('释放写入器时出错:', error);
+                }
                 this.writer = null;
             }
             
+            // 关闭端口
             if (this.port) {
-                await this.port.close();
+                try {
+                    await this.port.close();
+                } catch (error) {
+                    console.warn('关闭端口时出错:', error);
+                }
                 this.port = null;
             }
+            
+            // 清空缓冲区
+            this.readBuffer = new Uint8Array(0);
             
             // 重置端口信息
             this.resetPortInfo();
@@ -213,57 +263,66 @@ class SerialManager {
     }
 
     /**
-     * 计算校验和
-     * @param {Array} data - 数据数组
-     * @returns {number} 校验和
+     * 计算校验和（补码累加和）
+     * @param {number} cmdType - 命令类型
+     * @param {number} dataLen - 数据长度
+     * @param {Array} data - 数据数组（可选）
+     * @returns {number} 校验和（0-255）
      */
-    calculateChecksum(data) {
-        return data.reduce((sum, byte) => sum + byte, 0) & 0xFF;
+    calculateChecksum(cmdType, dataLen, data = []) {
+        let sumVal = cmdType + dataLen;
+        if (data && data.length > 0) {
+            sumVal += data.reduce((sum, byte) => sum + byte, 0);
+        }
+        // 补码累加和：(~sum + 1) & 0xFF
+        return ((~sumVal + 1) & 0xFF);
     }
 
     /**
      * 发送数据帧
-     * @param {number} cmd - 命令码
-     * @param {Array} data - 数据数组
+     * @param {number} cmdType - 命令类型
+     * @param {Array} data - 数据数组（可选）
      * @returns {Promise<boolean>} 发送是否成功
      */
-    async sendFrame(cmd, data = []) {
+    async sendFrame(cmdType, data = []) {
         try {
             if (!this.isConnected || !this.writer) {
                 throw new Error('串口未连接');
             }
 
-            if (data.length > this.MAX_DATA_LENGTH) {
-                throw new Error(`数据长度超过最大限制: ${data.length} > ${this.MAX_DATA_LENGTH}`);
+            const dataLen = data.length;
+            if (dataLen > this.MAX_DATA_LENGTH) {
+                throw new Error(`数据长度超过最大限制: ${dataLen} > ${this.MAX_DATA_LENGTH}`);
             }
 
-            // 构建数据帧
+            // 构建数据帧：帧头(1) + 命令类型(1) + 数据长度(1) + 数据(N) + 校验和(1) + 帧尾(1)
             const frame = [];
             
             // 帧头
-            frame.push(...this.FRAME_HEADER);
+            frame.push(this.FRAME_HEADER);
             
-            // 命令码
-            frame.push(cmd);
+            // 命令类型
+            frame.push(cmdType);
             
             // 数据长度
-            frame.push(data.length);
+            frame.push(dataLen);
             
             // 数据内容
-            frame.push(...data);
+            if (dataLen > 0) {
+                frame.push(...data);
+            }
             
-            // 计算校验和
-            const checksumData = [cmd, data.length, ...data];
-            const checksum = this.calculateChecksum(checksumData);
+            // 计算校验和（补码累加和）
+            const checksum = this.calculateChecksum(cmdType, dataLen, data);
             frame.push(checksum);
             
             // 帧尾
-            frame.push(...this.FRAME_TAIL);
+            frame.push(this.FRAME_TAIL);
 
             // 发送数据帧
             await this.writer.write(new Uint8Array(frame));
             
-            console.log(`发送数据帧: ${frame.map(b => b.toString(16).padStart(2, '0')).join(' ')}`);
+            console.log(`发送数据帧: CMD=0x${cmdType.toString(16).padStart(2, '0')}, 数据长度=${dataLen}, 帧=${frame.map(b => '0x' + b.toString(16).padStart(2, '0')).join(' ')}`);
             return true;
 
         } catch (error) {
@@ -284,123 +343,250 @@ class SerialManager {
             return;
         }
 
+        // 防止重复启动读取循环
+        if (this.isReading) {
+            console.warn('读取循环已在运行中');
+            return;
+        }
+
+        this.isReading = true;
         console.log('开始读取串口数据...');
         
-        try {
-            while (this.isConnected && this.reader) {
+        // 使用独立的读取循环，避免阻塞
+        this.readLoop().catch(error => {
+            console.error('读取循环异常:', error);
+            this.isReading = false;
+            if (this.errorCallback) {
+                this.errorCallback(error);
+            }
+            // 如果连接仍然有效，尝试重新启动读取
+            if (this.isConnected) {
+                console.log('尝试重新启动读取循环...');
+                setTimeout(() => {
+                    if (this.isConnected && !this.isReading) {
+                        this.startReading();
+                    }
+                }, 1000);
+            }
+        });
+    }
+
+    /**
+     * 读取循环
+     */
+    async readLoop() {
+        while (this.isConnected && this.reader) {
+            try {
                 const { value, done } = await this.reader.read();
                 
                 if (done) {
-                    console.log('串口读取完成');
+                    console.log('串口读取流已结束');
+                    this.isReading = false;
                     break;
                 }
                 
-                if (value) {
-                    this.processData(value);
+                if (value && value.length > 0) {
+                    // 将新数据添加到缓冲区
+                    this.appendToBuffer(value);
+                    
+                    // 处理缓冲区中的数据
+                    this.processBuffer();
+                }
+            } catch (error) {
+                // 检查是否是取消操作
+                if (error.name === 'AbortError' || error.message.includes('cancel')) {
+                    console.log('读取操作已取消');
+                    this.isReading = false;
+                    break;
+                }
+                
+                // 其他错误，记录并继续尝试
+                console.error('读取数据时出错:', error);
+                
+                // 如果连接仍然有效，等待后继续
+                if (this.isConnected) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    continue;
+                } else {
+                    this.isReading = false;
+                    break;
                 }
             }
-        } catch (error) {
-            console.error('读取串口数据时出错:', error);
-            if (this.errorCallback) {
-                this.errorCallback(error);
+        }
+        
+        this.isReading = false;
+    }
+
+    /**
+     * 将数据追加到缓冲区
+     * @param {Uint8Array} newData - 新接收的数据
+     */
+    appendToBuffer(newData) {
+        // 检查缓冲区大小，防止无限增长
+        if (this.readBuffer.length + newData.length > this.maxBufferSize) {
+            console.warn('缓冲区溢出，清空缓冲区');
+            this.readBuffer = new Uint8Array(0);
+        }
+        
+        // 合并数据
+        const merged = new Uint8Array(this.readBuffer.length + newData.length);
+        merged.set(this.readBuffer);
+        merged.set(newData, this.readBuffer.length);
+        this.readBuffer = merged;
+    }
+
+    /**
+     * 处理缓冲区中的数据
+     */
+    processBuffer() {
+        while (this.readBuffer.length > 0) {
+            const frameStart = this.findFrameStart();
+            
+            if (frameStart === -1) {
+                // 没有找到帧头，清空缓冲区（可能是不完整的数据）
+                if (this.readBuffer.length > this.maxBufferSize / 2) {
+                    console.warn('缓冲区中未找到有效帧头，清空部分数据');
+                    this.readBuffer = this.readBuffer.slice(-10); // 保留最后10字节，可能包含帧头的一部分
+                }
+                break;
+            }
+            
+            // 移除帧头之前的数据
+            if (frameStart > 0) {
+                this.readBuffer = this.readBuffer.slice(frameStart);
+            }
+            
+            // 尝试解析完整的数据帧
+            const frameLength = this.tryParseFrame();
+            
+            if (frameLength > 0) {
+                // 成功解析了一帧，移除已处理的数据
+                this.readBuffer = this.readBuffer.slice(frameLength);
+            } else {
+                // 数据不完整，等待更多数据
+                break;
             }
         }
     }
 
     /**
-     * 处理接收到的原始数据
-     * @param {Uint8Array} data - 原始数据
+     * 查找帧头位置
+     * @returns {number} 帧头位置，未找到返回-1
      */
-    processData(data) {
-        try {
-            // 将Uint8Array转换为数组进行处理
-            const dataArray = Array.from(data);
-            
-            // 查找完整的数据帧
-            for (let i = 0; i < dataArray.length; i++) {
-                // 查找帧头
-                if (dataArray[i] === this.FRAME_HEADER[0] && 
-                    i + 1 < dataArray.length && 
-                    dataArray[i + 1] === this.FRAME_HEADER[1]) {
-                    
-                    // 检查是否有足够的数据组成一个完整的数据帧
-                    if (i + 5 < dataArray.length) { // 至少需要帧头+命令+长度+校验和+帧尾
-                        const cmd = dataArray[i + 2];
-                        const length = dataArray[i + 3];
-                        
-                        // 检查帧长度是否合理
-                        if (length <= this.MAX_DATA_LENGTH && 
-                            i + 5 + length < dataArray.length) {
-                            
-                            const frameData = dataArray.slice(i + 4, i + 4 + length);
-                            const checksum = dataArray[i + 4 + length];
-                            const tail = dataArray.slice(i + 5 + length, i + 7 + length);
-                            
-                            // 验证帧尾
-                            if (tail.length === 2 && 
-                                tail[0] === this.FRAME_TAIL[0] && 
-                                tail[1] === this.FRAME_TAIL[1]) {
-                                
-                                // 验证校验和
-                                const checksumData = [cmd, length, ...frameData];
-                                const calculatedChecksum = this.calculateChecksum(checksumData);
-                                
-                                if (calculatedChecksum === checksum) {
-                                    this.parseFrame(cmd, frameData);
-                                    i += 6 + length; // 跳过已处理的数据
-                                } else {
-                                    console.warn('校验和错误:', calculatedChecksum, '!=', checksum);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (error) {
-            console.error('处理数据时出错:', error);
-            if (this.errorCallback) {
-                this.errorCallback(error);
+    findFrameStart() {
+        for (let i = 0; i < this.readBuffer.length; i++) {
+            if (this.readBuffer[i] === this.FRAME_HEADER) {
+                return i;
             }
         }
+        return -1;
     }
+
+    /**
+     * 尝试解析数据帧
+     * @returns {number} 解析的帧长度，如果数据不完整返回0，如果帧错误返回1（跳过当前字节）
+     */
+    tryParseFrame() {
+        // 最小帧长度：帧头(1) + 命令类型(1) + 数据长度(1) + 校验和(1) + 帧尾(1) = 5
+        if (this.readBuffer.length < this.MIN_FRAME_LEN) {
+            return 0;
+        }
+        
+        // 检查帧头
+        if (this.readBuffer[0] !== this.FRAME_HEADER) {
+            return 0;
+        }
+        
+        // 至少需要3个字节才能知道数据长度（头+类型+长度）
+        if (this.readBuffer.length < 3) {
+            return 0;
+        }
+        
+        const cmdType = this.readBuffer[1];
+        const dataLength = this.readBuffer[2];
+        
+        // 检查数据长度是否合理
+        if (dataLength > this.MAX_DATA_LENGTH) {
+            console.warn(`数据长度异常: ${dataLength}`);
+            return 1; // 跳过帧头字节，继续查找下一帧
+        }
+        
+        // 计算完整帧长度：帧头(1) + 命令类型(1) + 数据长度(1) + 数据(dataLength) + 校验和(1) + 帧尾(1)
+        const totalFrameLength = 5 + dataLength;
+        
+        // 检查是否有足够的数据
+        if (this.readBuffer.length < totalFrameLength) {
+            return 0; // 数据不完整，等待更多数据
+        }
+        
+        // 提取帧数据
+        const frameData = Array.from(this.readBuffer.slice(3, 3 + dataLength));
+        const checksum = this.readBuffer[3 + dataLength];
+        const frameTail = this.readBuffer[3 + dataLength + 1];
+        
+        // 检查帧尾
+        if (frameTail !== this.FRAME_TAIL) {
+            console.warn(`帧尾不匹配: 收到0x${frameTail.toString(16).padStart(2, '0')}, 期望0x${this.FRAME_TAIL.toString(16).padStart(2, '0')}`);
+            return 1; // 跳过帧头字节，继续查找
+        }
+        
+        // 验证校验和（补码累加和）
+        const calculatedChecksum = this.calculateChecksum(cmdType, dataLength, frameData);
+        
+        if (calculatedChecksum !== checksum) {
+            console.warn(`校验和错误: 收到0x${checksum.toString(16).padStart(2, '0')}, 计算0x${calculatedChecksum.toString(16).padStart(2, '0')}`);
+            return 1; // 跳过帧头字节，继续查找
+        }
+        
+        // 校验通过，解析数据帧
+        this.parseFrame(cmdType, frameData);
+        
+        return totalFrameLength;
+    }
+
 
     /**
      * 解析数据帧
-     * @param {number} cmd - 命令码
+     * @param {number} cmdType - 命令类型
      * @param {Array} data - 数据内容
      */
-    parseFrame(cmd, data) {
+    parseFrame(cmdType, data) {
         try {
             // 更新统计信息
             this.updateStatistics();
 
-            // 处理响应帧
-            if (cmd === this.COMMANDS.RESPONSE_OK) {
-                const originalCmd = data[0];
-                console.log(`命令执行成功: 0x${originalCmd.toString(16).padStart(2, '0')}`);
-                if (this.responseCallback) {
-                    this.responseCallback('ok', originalCmd, data.slice(1));
-                }
-            } else if (cmd === this.COMMANDS.RESPONSE_ERROR) {
-                const originalCmd = data[0];
-                console.log(`命令执行失败: 0x${originalCmd.toString(16).padStart(2, '0')}`);
-                if (this.responseCallback) {
-                    this.responseCallback('error', originalCmd, data.slice(1));
-                }
-            } else if (cmd === this.COMMANDS.RESPONSE_DATA) {
-                const originalCmd = data[0];
-                const responseData = data.slice(1);
-                console.log(`数据响应: 0x${originalCmd.toString(16).padStart(2, '0')}`, responseData);
-                if (this.responseCallback) {
-                    this.responseCallback('data', originalCmd, responseData);
-                }
+            // 处理传感器数据通知（0x20）
+            if (cmdType === this.COMMANDS.CMD_SENSOR_DATA) {
+                this.parseSensorDataFrame(data);
+            }
+            // 处理映射数据通知（0x21）
+            else if (cmdType === this.COMMANDS.CMD_MAPPING_DATA) {
+                this.parseMappingDataFrame(data);
+            }
+            // 处理命令响应（其他命令类型）
+            else {
+                // 响应格式：结果码(result) + 额外数据
+                const result = data.length > 0 ? data[0] : this.COMMANDS.RESULT_FAIL;
+                const extraData = data.length > 1 ? data.slice(1) : [];
                 
-                // 如果是传感器数据，也调用数据回调
-                if (originalCmd === this.COMMANDS.SENSOR_GET_DATA && responseData.length === 15) {
-                    this.parseSensorData(responseData);
+                if (result === this.COMMANDS.RESULT_SUCCESS) {
+                    console.log(`命令执行成功: CMD=0x${cmdType.toString(16).padStart(2, '0')}`);
+                    if (this.responseCallback) {
+                        this.responseCallback('ok', cmdType, extraData);
+                    }
+                } else {
+                    const resultNames = {
+                        [this.COMMANDS.RESULT_FAIL]: '执行失败',
+                        [this.COMMANDS.RESULT_UNKNOWN_CMD]: '未知命令',
+                        [this.COMMANDS.RESULT_NOT_ENABLED]: '未启用',
+                        [this.COMMANDS.RESULT_CHECKSUM_ERROR]: '校验和错误'
+                    };
+                    const resultName = resultNames[result] || `错误码0x${result.toString(16).padStart(2, '0')}`;
+                    console.log(`命令执行失败: CMD=0x${cmdType.toString(16).padStart(2, '0')}, ${resultName}`);
+                    if (this.responseCallback) {
+                        this.responseCallback('error', cmdType, extraData);
+                    }
                 }
-            } else {
-                console.log(`未知命令: 0x${cmd.toString(16).padStart(2, '0')}`, data);
             }
 
         } catch (error) {
@@ -412,37 +598,58 @@ class SerialManager {
     }
 
     /**
-     * 解析传感器数据
-     * @param {Array} data - 传感器数据数组
+     * 解析传感器数据帧（命令类型0x20）
+     * @param {Array} data - 传感器数据数组（31字节：手侧1字节 + 15个uint16，每个2字节）
      */
-    parseSensorData(data) {
+    parseSensorDataFrame(data) {
         try {
-            // 解析15个关节角度数据
+            if (data.length < 31) {
+                console.warn(`传感器数据长度不足: ${data.length}, 期望31`);
+                return;
+            }
+
+            // 解析手侧（0=右手, 1=左手）
+            const hand = data[0];
+            
+            // 解析15个uint16值（小端序）
+            const sensorData = [];
+            for (let i = 0; i < 15; i++) {
+                const idx = 1 + i * 2;
+                // 小端序：低字节在前，高字节在后
+                const value = data[idx] | (data[idx + 1] << 8);
+                sensorData.push(value);
+            }
+
+            // 构建关节数据对象
             const jointData = {
+                hand: hand, // 0=右手, 1=左手
                 // 大拇指
-                thumbYaw: data[0],
-                thumbPitch: data[1],
-                thumbTip: data[2],
+                thumbYaw: sensorData[0],
+                thumbPitch: sensorData[1],
+                thumbTip: sensorData[2],
                 
                 // 食指
-                indexYaw: data[3],
-                indexPitch: data[4],
-                indexTip: data[5],
+                indexYaw: sensorData[3],
+                indexPitch: sensorData[4],
+                indexTip: sensorData[5],
                 
                 // 中指
-                middleYaw: data[6],
-                middlePitch: data[7],
-                middleTip: data[8],
+                middleYaw: sensorData[6],
+                middlePitch: sensorData[7],
+                middleTip: sensorData[8],
                 
                 // 无名指
-                ringYaw: data[9],
-                ringPitch: data[10],
-                ringTip: data[11],
+                ringYaw: sensorData[9],
+                ringPitch: sensorData[10],
+                ringTip: sensorData[11],
                 
                 // 小指
-                pinkyYaw: data[12],
-                pinkyPitch: data[13],
-                pinkyTip: data[14],
+                pinkyYaw: sensorData[12],
+                pinkyPitch: sensorData[13],
+                pinkyTip: sensorData[14],
+                
+                // 原始传感器数据
+                sensorData: sensorData,
                 
                 // 元数据
                 timestamp: Date.now(),
@@ -455,7 +662,88 @@ class SerialManager {
             }
 
         } catch (error) {
-            console.error('解析传感器数据时出错:', error);
+            console.error('解析传感器数据帧时出错:', error);
+            if (this.errorCallback) {
+                this.errorCallback(error);
+            }
+        }
+    }
+
+    /**
+     * 解析映射数据帧（命令类型0x21）
+     * @param {Array} data - 映射数据数组（61字节：手侧1字节 + 15个float，每个4字节）
+     */
+    parseMappingDataFrame(data) {
+        try {
+            if (data.length < 61) {
+                console.warn(`映射数据长度不足: ${data.length}, 期望61`);
+                return;
+            }
+
+            // 解析手侧（0=右手, 1=左手）
+            const hand = data[0];
+            
+            // 解析15个float值（IEEE 754单精度，小端序）
+            const mappingData = [];
+            for (let i = 0; i < 15; i++) {
+                const idx = 1 + i * 4;
+                // 提取4字节
+                const bytes = new Uint8Array([
+                    data[idx],
+                    data[idx + 1],
+                    data[idx + 2],
+                    data[idx + 3]
+                ]);
+                
+                // 使用DataView解析IEEE 754单精度浮点数（小端序）
+                const view = new DataView(bytes.buffer);
+                const value = view.getFloat32(0, true); // true表示小端序
+                mappingData.push(value);
+            }
+
+            // 构建映射数据对象
+            const mappingDataObj = {
+                hand: hand, // 0=右手, 1=左手
+                // 大拇指
+                thumbYaw: mappingData[0],
+                thumbPitch: mappingData[1],
+                thumbTip: mappingData[2],
+                
+                // 食指
+                indexYaw: mappingData[3],
+                indexPitch: mappingData[4],
+                indexTip: mappingData[5],
+                
+                // 中指
+                middleYaw: mappingData[6],
+                middlePitch: mappingData[7],
+                middleTip: mappingData[8],
+                
+                // 无名指
+                ringYaw: mappingData[9],
+                ringPitch: mappingData[10],
+                ringTip: mappingData[11],
+                
+                // 小指
+                pinkyYaw: mappingData[12],
+                pinkyPitch: mappingData[13],
+                pinkyTip: mappingData[14],
+                
+                // 原始映射数据
+                mappingData: mappingData,
+                
+                // 元数据
+                timestamp: Date.now(),
+                packetNumber: this.packetCount++
+            };
+
+            // 调用数据回调函数（如果有映射数据回调）
+            if (this.dataCallback) {
+                this.dataCallback(mappingDataObj);
+            }
+
+        } catch (error) {
+            console.error('解析映射数据帧时出错:', error);
             if (this.errorCallback) {
                 this.errorCallback(error);
             }
@@ -575,13 +863,39 @@ class SerialManager {
      */
     updatePortInfo() {
         if (this.port) {
-            this.portInfo = {
-                name: this.port.getInfo ? this.port.getInfo().usbVendorId + ':' + this.port.getInfo().usbProductId : '未知设备',
-                id: this.port.getInfo ? this.port.getInfo().usbVendorId + ':' + this.port.getInfo().usbProductId : null,
-                manufacturer: this.port.getInfo ? this.port.getInfo().usbVendorId : null,
-                productId: this.port.getInfo ? this.port.getInfo().usbProductId : null,
-                vendorId: this.port.getInfo ? this.port.getInfo().usbVendorId : null
-            };
+            try {
+                // Web Serial API 使用 getInfo() 方法获取端口信息
+                const info = this.port.getInfo();
+                
+                if (info && info.usbVendorId && info.usbProductId) {
+                    const portId = `${info.usbVendorId}:${info.usbProductId}`;
+                    this.portInfo = {
+                        name: `USB设备 (${portId})`,
+                        id: portId,
+                        manufacturer: info.usbVendorId ? `0x${info.usbVendorId.toString(16).padStart(4, '0')}` : null,
+                        productId: info.usbProductId ? `0x${info.usbProductId.toString(16).padStart(4, '0')}` : null,
+                        vendorId: info.usbVendorId ? `0x${info.usbVendorId.toString(16).padStart(4, '0')}` : null
+                    };
+                } else {
+                    // 如果没有 USB 信息，使用默认值
+                    this.portInfo = {
+                        name: '串口设备',
+                        id: 'serial-port',
+                        manufacturer: null,
+                        productId: null,
+                        vendorId: null
+                    };
+                }
+            } catch (error) {
+                console.warn('获取端口信息失败:', error);
+                this.portInfo = {
+                    name: '串口设备',
+                    id: 'serial-port',
+                    manufacturer: null,
+                    productId: null,
+                    vendorId: null
+                };
+            }
         }
     }
 
@@ -606,102 +920,101 @@ class SerialManager {
         return { ...this.portInfo };
     }
 
-    // 系统命令
-    async ping() {
-        return await this.sendFrame(this.COMMANDS.PING);
+    // 系统控制命令
+    /**
+     * 启用数据帧模式（发送字符串命令 "frame_enable\n"）
+     */
+    async enable() {
+        try {
+            if (!this.isConnected || !this.writer) {
+                throw new Error('串口未连接');
+            }
+            const commandStr = "frame_enable\n";
+            await this.writer.write(new TextEncoder().encode(commandStr));
+            console.log('已发送启用命令: frame_enable');
+            return true;
+        } catch (error) {
+            console.error('发送启用命令失败:', error);
+            return false;
+        }
     }
 
-    async getVersion() {
-        return await this.sendFrame(this.COMMANDS.GET_VERSION);
-    }
-
-    async getStatus() {
-        return await this.sendFrame(this.COMMANDS.GET_STATUS);
-    }
-
-    // 5点校准命令
-    async start5PointCalibration() {
-        return await this.sendFrame(this.COMMANDS.CAL_5P_START);
-    }
-
-    async next5PointStep() {
-        return await this.sendFrame(this.COMMANDS.CAL_5P_NEXT);
-    }
-
-    async reset5PointCalibration() {
-        return await this.sendFrame(this.COMMANDS.CAL_5P_RESET);
-    }
-
-    async get5PointCalibrationState() {
-        return await this.sendFrame(this.COMMANDS.CAL_5P_GET_STATE);
+    async disable() {
+        return await this.sendFrame(this.COMMANDS.CMD_DISABLE);
     }
 
     // 快速校准命令
     async startQuickCalibration() {
-        return await this.sendFrame(this.COMMANDS.CAL_QUICK_START);
+        return await this.sendFrame(this.COMMANDS.CMD_QUICK_START);
     }
 
     async finishQuickCalibration() {
-        return await this.sendFrame(this.COMMANDS.CAL_QUICK_FINISH);
-    }
-
-    async resetQuickCalibration() {
-        return await this.sendFrame(this.COMMANDS.CAL_QUICK_RESET);
-    }
-
-    async getQuickCalibrationState() {
-        return await this.sendFrame(this.COMMANDS.CAL_QUICK_GET_STATE);
+        return await this.sendFrame(this.COMMANDS.CMD_QUICK_FINISH);
     }
 
     // 锚定点校准命令
-    async startAnchorCalibration(finger1, finger2) {
-        return await this.sendFrame(this.COMMANDS.CAL_ANCHOR_START, [finger1, finger2]);
+    /**
+     * 开始锚定点标定
+     * @param {number} hand - 手侧（0=右手, 1=左手）
+     * @param {Array<number>} fingers - 手指列表（1=食指, 2=中指, 3=无名指, 4=小指）
+     */
+    async startAnchorCalibration(hand, fingers) {
+        const data = [hand, fingers.length, ...fingers];
+        return await this.sendFrame(this.COMMANDS.CMD_ANCHOR_START, data);
     }
 
     async recordAnchorPoint() {
-        return await this.sendFrame(this.COMMANDS.CAL_ANCHOR_RECORD);
+        return await this.sendFrame(this.COMMANDS.CMD_RECORD);
     }
 
     async applyAnchorCalibration() {
-        return await this.sendFrame(this.COMMANDS.CAL_ANCHOR_APPLY);
+        return await this.sendFrame(this.COMMANDS.CMD_APPLY);
     }
 
-    async resetAnchorCalibration() {
-        return await this.sendFrame(this.COMMANDS.CAL_ANCHOR_RESET);
+    async saveCalibration() {
+        return await this.sendFrame(this.COMMANDS.CMD_SAVE);
     }
 
-    async getAnchorCalibrationState() {
-        return await this.sendFrame(this.COMMANDS.CAL_ANCHOR_GET_STATE);
+    async loadCalibration() {
+        return await this.sendFrame(this.COMMANDS.CMD_LOAD);
     }
 
-    // 传感器数据命令
-    async enableSensorPrint() {
-        return await this.sendFrame(this.COMMANDS.SENSOR_PRINT_ON);
+    async clearCalibration() {
+        return await this.sendFrame(this.COMMANDS.CMD_CLEAR);
     }
 
-    async disableSensorPrint() {
-        return await this.sendFrame(this.COMMANDS.SENSOR_PRINT_OFF);
+    async resetCalibration() {
+        return await this.sendFrame(this.COMMANDS.CMD_RESET);
     }
 
-    async getSensorData() {
-        return await this.sendFrame(this.COMMANDS.SENSOR_GET_DATA);
+    // 查询命令
+    async getStatus() {
+        return await this.sendFrame(this.COMMANDS.CMD_STATUS);
     }
 
-    // 校准参数命令
-    async getCalibrationParameter(sensorIdx) {
-        return await this.sendFrame(this.COMMANDS.PARAM_GET, [sensorIdx]);
+    // 控制命令
+    async enableCAN() {
+        return await this.sendFrame(this.COMMANDS.CMD_CAN_ENABLE);
     }
 
-    async setCalibrationParameter(sensorIdx, minHigh, minLow, maxHigh, maxLow) {
-        return await this.sendFrame(this.COMMANDS.PARAM_SET, [sensorIdx, minHigh, minLow, maxHigh, maxLow]);
+    async disableCAN() {
+        return await this.sendFrame(this.COMMANDS.CMD_CAN_DISABLE);
     }
 
-    async saveCalibrationParameters() {
-        return await this.sendFrame(this.COMMANDS.PARAM_SAVE);
+    async enableSensor() {
+        return await this.sendFrame(this.COMMANDS.CMD_SENSOR_ENABLE);
     }
 
-    async loadCalibrationParameters() {
-        return await this.sendFrame(this.COMMANDS.PARAM_LOAD);
+    async disableSensor() {
+        return await this.sendFrame(this.COMMANDS.CMD_SENSOR_DISABLE);
+    }
+
+    async enableMapping() {
+        return await this.sendFrame(this.COMMANDS.CMD_MAPPING_ENABLE);
+    }
+
+    async disableMapping() {
+        return await this.sendFrame(this.COMMANDS.CMD_MAPPING_DISABLE);
     }
 }
 

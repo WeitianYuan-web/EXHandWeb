@@ -22,7 +22,7 @@
             <!-- 手部关节进度条区域 -->
             <div class="hand-joints-container">
                 <div class="joints-header">
-                    <h2>手部关节角度监控</h2>
+                    <h2>手部关节映射数据监控 (0-1.0)</h2>
                     <div class="joints-controls">
                         <button id="reset-values" class="btn btn-secondary">重置数值</button>
                         <button id="toggle-animation" class="btn btn-secondary">动画模式</button>
@@ -307,117 +307,95 @@
                 <div class="system-commands">
                     <h3>系统命令</h3>
                     <div class="command-group">
-                        <button id="ping-btn" class="btn btn-secondary" disabled>心跳测试</button>
-                        <button id="version-btn" class="btn btn-secondary" disabled>获取版本</button>
-                        <button id="status-btn" class="btn btn-secondary" disabled>获取状态</button>
+                        <button id="status-btn" class="btn btn-secondary" disabled>查询状态</button>
                     </div>
                     <div id="system-response" class="response-display"></div>
                 </div>
 
-                <!-- 校准功能 -->
-                <div class="calibration-commands">
-                    <h3>校准功能</h3>
-                    <div class="calibration-tabs">
-                        <button class="tab-btn active" data-tab="5point">5点校准</button>
-                        <button class="tab-btn" data-tab="quick">快速校准</button>
-                        <button class="tab-btn" data-tab="anchor">锚定点校准</button>
+                <!-- 快速校准命令 -->
+                <div class="quick-calibration-commands">
+                    <h3>快速校准</h3>
+                    <div class="command-group">
+                        <button id="quick-start-btn" class="btn btn-warning" disabled>开始校准</button>
+                        <button id="quick-finish-btn" class="btn btn-warning" disabled>完成校准</button>
                     </div>
-                    
-                    <!-- 5点校准 -->
-                    <div id="5point-tab" class="tab-content active">
-                        <div class="command-group">
-                            <button id="cal-5p-start" class="btn btn-warning" disabled>开始校准</button>
-                            <button id="cal-5p-next" class="btn btn-warning" disabled>下一步</button>
-                            <button id="cal-5p-reset" class="btn btn-secondary" disabled>重置</button>
+                </div>
+
+                <!-- 锚定点校准命令 -->
+                <div class="anchor-calibration-commands">
+                    <h3>锚定点校准</h3>
+                    <div class="anchor-controls">
+                        <div class="finger-selection">
+                            <label>手侧:</label>
+                            <select id="anchor-hand">
+                                <option value="0">右手</option>
+                                <option value="1">左手</option>
+                            </select>
                         </div>
-                        <div class="calibration-status">
-                            <span id="cal-5p-status">未开始</span>
+                        <div class="finger-selection">
+                            <label>手指1:</label>
+                            <select id="anchor-finger1">
+                                <option value="1">食指</option>
+                                <option value="2">中指</option>
+                                <option value="3">无名指</option>
+                                <option value="4">小指</option>
+                            </select>
+                        </div>
+                        <div class="finger-selection">
+                            <label>手指2:</label>
+                            <select id="anchor-finger2">
+                                <option value="1">食指</option>
+                                <option value="2">中指</option>
+                                <option value="3">无名指</option>
+                                <option value="4">小指</option>
+                            </select>
                         </div>
                     </div>
-                    
-                    <!-- 快速校准 -->
-                    <div id="quick-tab" class="tab-content">
-                        <div class="command-group">
-                            <button id="cal-quick-start" class="btn btn-warning" disabled>开始校准</button>
-                            <button id="cal-quick-finish" class="btn btn-warning" disabled>完成校准</button>
-                            <button id="cal-quick-reset" class="btn btn-secondary" disabled>重置</button>
-                        </div>
-                        <div class="calibration-status">
-                            <span id="cal-quick-status">未开始</span>
-                        </div>
+                    <div class="command-group">
+                        <button id="anchor-start-btn" class="btn btn-warning" disabled>开始校准</button>
+                        <button id="anchor-record-btn" class="btn btn-warning" disabled>记录点</button>
+                        <button id="anchor-apply-btn" class="btn btn-warning" disabled>应用参数</button>
                     </div>
-                    
-                    <!-- 锚定点校准 -->
-                    <div id="anchor-tab" class="tab-content">
-                        <div class="anchor-controls">
-                            <div class="finger-selection">
-                                <label>选择手指1:</label>
-                                <select id="anchor-finger1">
-                                    <option value="0">大拇指</option>
-                                    <option value="1">食指</option>
-                                    <option value="2">中指</option>
-                                    <option value="3">无名指</option>
-                                    <option value="4">小指</option>
-                                </select>
-                            </div>
-                            <div class="finger-selection">
-                                <label>选择手指2:</label>
-                                <select id="anchor-finger2">
-                                    <option value="0">大拇指</option>
-                                    <option value="1">食指</option>
-                                    <option value="2">中指</option>
-                                    <option value="3">无名指</option>
-                                    <option value="4">小指</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="command-group">
-                            <button id="cal-anchor-start" class="btn btn-warning" disabled>开始校准</button>
-                            <button id="cal-anchor-record" class="btn btn-warning" disabled>记录点</button>
-                            <button id="cal-anchor-apply" class="btn btn-warning" disabled>应用参数</button>
-                            <button id="cal-anchor-reset" class="btn btn-secondary" disabled>重置</button>
-                        </div>
-                        <div class="calibration-status">
-                            <span id="cal-anchor-status">未开始</span>
-                        </div>
+                </div>
+
+                <!-- 校准数据管理 -->
+                <div class="calibration-data-commands">
+                    <h3>校准数据管理</h3>
+                    <div class="command-group">
+                        <button id="save-calibration-btn" class="btn btn-success" disabled>保存校准</button>
+                        <button id="load-calibration-btn" class="btn btn-primary" disabled>加载校准</button>
+                        <button id="clear-calibration-btn" class="btn btn-danger" disabled>清除校准</button>
+                        <button id="reset-calibration-btn" class="btn btn-secondary" disabled>重置校准</button>
+                    </div>
+                </div>
+
+                <!-- CAN控制 -->
+                <div class="can-control-commands">
+                    <h3>CAN控制</h3>
+                    <div class="command-group">
+                        <button id="can-enable-btn" class="btn btn-success" disabled>启用CAN</button>
+                        <button id="can-disable-btn" class="btn btn-danger" disabled>禁用CAN</button>
                     </div>
                 </div>
 
                 <!-- 传感器控制 -->
-                <div class="sensor-commands">
+                <div class="sensor-control-commands">
                     <h3>传感器控制</h3>
                     <div class="command-group">
-                        <button id="sensor-print-on" class="btn btn-success" disabled>开启数据打印</button>
-                        <button id="sensor-print-off" class="btn btn-danger" disabled>关闭数据打印</button>
-                        <button id="sensor-get-data" class="btn btn-primary" disabled>获取数据</button>
+                        <button id="sensor-enable-btn" class="btn btn-success" disabled>启用传感器</button>
+                        <button id="sensor-disable-btn" class="btn btn-danger" disabled>禁用传感器</button>
                     </div>
                 </div>
 
-                <!-- 校准参数管理 -->
-                <div class="parameter-commands">
-                    <h3>校准参数管理</h3>
-                    <div class="parameter-controls">
-                        <div class="parameter-input">
-                            <label>传感器索引:</label>
-                            <input type="number" id="param-sensor-idx" min="0" max="14" value="0">
-                        </div>
-                        <div class="parameter-input">
-                            <label>最小值:</label>
-                            <input type="number" id="param-min-value" min="0" max="65535" value="18000">
-                        </div>
-                        <div class="parameter-input">
-                            <label>最大值:</label>
-                            <input type="number" id="param-max-value" min="0" max="65535" value="20480">
-                        </div>
-                    </div>
+                <!-- 映射数据控制 -->
+                <div class="mapping-control-commands">
+                    <h3>映射数据控制</h3>
                     <div class="command-group">
-                        <button id="param-get" class="btn btn-secondary" disabled>获取参数</button>
-                        <button id="param-set" class="btn btn-warning" disabled>设置参数</button>
-                        <button id="param-save" class="btn btn-success" disabled>保存参数</button>
-                        <button id="param-load" class="btn btn-primary" disabled>加载参数</button>
+                        <button id="mapping-enable-btn" class="btn btn-success" disabled>启用映射</button>
+                        <button id="mapping-disable-btn" class="btn btn-danger" disabled>禁用映射</button>
                     </div>
-                    <div id="parameter-response" class="response-display"></div>
                 </div>
+
 
                 <!-- 数据统计 -->
                 <div class="data-stats">
@@ -435,11 +413,20 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 日志窗口 -->
+            <div class="log-window">
+                <div class="log-header">
+                    <h3>系统日志</h3>
+                    <button id="clear-log-btn" class="btn btn-secondary btn-sm">清空日志</button>
+                </div>
+                <div id="log-container" class="log-container"></div>
+            </div>
         </main>
 
         <!-- 底部信息 -->
         <footer class="footer">
-            <p>手部关节传感器可视化系统 v1.0 | 支持15个关节角度实时监控</p>
+            <p>手部关节传感器可视化系统 v1.0 | 支持15个关节映射数据实时监控 (0-1.0)</p>
         </footer>
     </div>
 

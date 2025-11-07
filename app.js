@@ -23,44 +23,8 @@ class HandSensorApp {
             lastUpdate: document.getElementById('last-update'),
             
             // 系统命令
-            pingBtn: document.getElementById('ping-btn'),
-            versionBtn: document.getElementById('version-btn'),
             statusBtn: document.getElementById('status-btn'),
             systemResponse: document.getElementById('system-response'),
-            
-            // 校准命令
-            cal5pStart: document.getElementById('cal-5p-start'),
-            cal5pNext: document.getElementById('cal-5p-next'),
-            cal5pReset: document.getElementById('cal-5p-reset'),
-            cal5pStatus: document.getElementById('cal-5p-status'),
-            
-            calQuickStart: document.getElementById('cal-quick-start'),
-            calQuickFinish: document.getElementById('cal-quick-finish'),
-            calQuickReset: document.getElementById('cal-quick-reset'),
-            calQuickStatus: document.getElementById('cal-quick-status'),
-            
-            anchorFinger1: document.getElementById('anchor-finger1'),
-            anchorFinger2: document.getElementById('anchor-finger2'),
-            calAnchorStart: document.getElementById('cal-anchor-start'),
-            calAnchorRecord: document.getElementById('cal-anchor-record'),
-            calAnchorApply: document.getElementById('cal-anchor-apply'),
-            calAnchorReset: document.getElementById('cal-anchor-reset'),
-            calAnchorStatus: document.getElementById('cal-anchor-status'),
-            
-            // 传感器命令
-            sensorPrintOn: document.getElementById('sensor-print-on'),
-            sensorPrintOff: document.getElementById('sensor-print-off'),
-            sensorGetData: document.getElementById('sensor-get-data'),
-            
-            // 参数命令
-            paramSensorIdx: document.getElementById('param-sensor-idx'),
-            paramMinValue: document.getElementById('param-min-value'),
-            paramMaxValue: document.getElementById('param-max-value'),
-            paramGet: document.getElementById('param-get'),
-            paramSet: document.getElementById('param-set'),
-            paramSave: document.getElementById('param-save'),
-            paramLoad: document.getElementById('param-load'),
-            parameterResponse: document.getElementById('parameter-response'),
             
             // 串口配置
             baudRate: document.getElementById('baud-rate'),
@@ -86,6 +50,10 @@ class HandSensorApp {
         // 关节进度条元素
         this.jointElements = this.initializeJointElements();
         
+        // 日志窗口元素
+        this.logContainer = null;
+        this.logMaxLines = 500; // 最大日志行数
+        
         this.init();
     }
 
@@ -99,6 +67,9 @@ class HandSensorApp {
             // 初始化串口管理器
             this.serialManager = new SerialManager();
             
+            // 初始化日志窗口
+            this.initLogWindow();
+            
             // 设置事件监听器
             this.setupEventListeners();
             
@@ -109,7 +80,7 @@ class HandSensorApp {
             this.loadSerialConfig();
             
             this.isInitialized = true;
-            console.log('应用程序初始化完成');
+            this.log('应用程序初始化完成', 'info');
             
         } catch (error) {
             console.error('初始化应用程序失败:', error);
@@ -170,79 +141,88 @@ class HandSensorApp {
             }
             
             // 系统命令按钮
-            if (this.elements.pingBtn) {
-                this.elements.pingBtn.addEventListener('click', () => this.ping());
-            }
-            if (this.elements.versionBtn) {
-                this.elements.versionBtn.addEventListener('click', () => this.getVersion());
-            }
-            if (this.elements.statusBtn) {
-                this.elements.statusBtn.addEventListener('click', () => this.getStatus());
+            const statusBtn = document.getElementById('status-btn');
+            if (statusBtn) {
+                statusBtn.addEventListener('click', () => this.getStatus());
             }
             
-            // 校准命令按钮
-            if (this.elements.cal5pStart) {
-                this.elements.cal5pStart.addEventListener('click', () => this.start5PointCalibration());
+            // 快速校准按钮
+            const quickStartBtn = document.getElementById('quick-start-btn');
+            if (quickStartBtn) {
+                quickStartBtn.addEventListener('click', () => this.startQuickCalibration());
             }
-            if (this.elements.cal5pNext) {
-                this.elements.cal5pNext.addEventListener('click', () => this.next5PointStep());
-            }
-            if (this.elements.cal5pReset) {
-                this.elements.cal5pReset.addEventListener('click', () => this.reset5PointCalibration());
-            }
-            
-            if (this.elements.calQuickStart) {
-                this.elements.calQuickStart.addEventListener('click', () => this.startQuickCalibration());
-            }
-            if (this.elements.calQuickFinish) {
-                this.elements.calQuickFinish.addEventListener('click', () => this.finishQuickCalibration());
-            }
-            if (this.elements.calQuickReset) {
-                this.elements.calQuickReset.addEventListener('click', () => this.resetQuickCalibration());
+            const quickFinishBtn = document.getElementById('quick-finish-btn');
+            if (quickFinishBtn) {
+                quickFinishBtn.addEventListener('click', () => this.finishQuickCalibration());
             }
             
-            if (this.elements.calAnchorStart) {
-                this.elements.calAnchorStart.addEventListener('click', () => this.startAnchorCalibration());
+            // 锚定点校准按钮
+            const anchorStartBtn = document.getElementById('anchor-start-btn');
+            if (anchorStartBtn) {
+                anchorStartBtn.addEventListener('click', () => this.startAnchorCalibration());
             }
-            if (this.elements.calAnchorRecord) {
-                this.elements.calAnchorRecord.addEventListener('click', () => this.recordAnchorPoint());
+            const anchorRecordBtn = document.getElementById('anchor-record-btn');
+            if (anchorRecordBtn) {
+                anchorRecordBtn.addEventListener('click', () => this.recordAnchorPoint());
             }
-            if (this.elements.calAnchorApply) {
-                this.elements.calAnchorApply.addEventListener('click', () => this.applyAnchorCalibration());
-            }
-            if (this.elements.calAnchorReset) {
-                this.elements.calAnchorReset.addEventListener('click', () => this.resetAnchorCalibration());
-            }
-            
-            // 传感器命令按钮
-            if (this.elements.sensorPrintOn) {
-                this.elements.sensorPrintOn.addEventListener('click', () => this.enableSensorPrint());
-            }
-            if (this.elements.sensorPrintOff) {
-                this.elements.sensorPrintOff.addEventListener('click', () => this.disableSensorPrint());
-            }
-            if (this.elements.sensorGetData) {
-                this.elements.sensorGetData.addEventListener('click', () => this.getSensorData());
+            const anchorApplyBtn = document.getElementById('anchor-apply-btn');
+            if (anchorApplyBtn) {
+                anchorApplyBtn.addEventListener('click', () => this.applyAnchorCalibration());
             }
             
-            // 参数命令按钮
-            if (this.elements.paramGet) {
-                this.elements.paramGet.addEventListener('click', () => this.getCalibrationParameter());
+            // 校准数据管理按钮
+            const saveCalibrationBtn = document.getElementById('save-calibration-btn');
+            if (saveCalibrationBtn) {
+                saveCalibrationBtn.addEventListener('click', () => this.saveCalibration());
             }
-            if (this.elements.paramSet) {
-                this.elements.paramSet.addEventListener('click', () => this.setCalibrationParameter());
+            const loadCalibrationBtn = document.getElementById('load-calibration-btn');
+            if (loadCalibrationBtn) {
+                loadCalibrationBtn.addEventListener('click', () => this.loadCalibration());
             }
-            if (this.elements.paramSave) {
-                this.elements.paramSave.addEventListener('click', () => this.saveCalibrationParameters());
+            const clearCalibrationBtn = document.getElementById('clear-calibration-btn');
+            if (clearCalibrationBtn) {
+                clearCalibrationBtn.addEventListener('click', () => this.clearCalibration());
             }
-            if (this.elements.paramLoad) {
-                this.elements.paramLoad.addEventListener('click', () => this.loadCalibrationParameters());
+            const resetCalibrationBtn = document.getElementById('reset-calibration-btn');
+            if (resetCalibrationBtn) {
+                resetCalibrationBtn.addEventListener('click', () => this.resetCalibration());
             }
             
-            // 校准标签页切换
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => this.switchCalibrationTab(e.target.dataset.tab));
-            });
+            // CAN控制按钮
+            const canEnableBtn = document.getElementById('can-enable-btn');
+            if (canEnableBtn) {
+                canEnableBtn.addEventListener('click', () => this.enableCAN());
+            }
+            const canDisableBtn = document.getElementById('can-disable-btn');
+            if (canDisableBtn) {
+                canDisableBtn.addEventListener('click', () => this.disableCAN());
+            }
+            
+            // 传感器控制按钮
+            const sensorEnableBtn = document.getElementById('sensor-enable-btn');
+            if (sensorEnableBtn) {
+                sensorEnableBtn.addEventListener('click', () => this.enableSensor());
+            }
+            const sensorDisableBtn = document.getElementById('sensor-disable-btn');
+            if (sensorDisableBtn) {
+                sensorDisableBtn.addEventListener('click', () => this.disableSensor());
+            }
+            
+            // 映射数据控制按钮
+            const mappingEnableBtn = document.getElementById('mapping-enable-btn');
+            if (mappingEnableBtn) {
+                mappingEnableBtn.addEventListener('click', () => this.enableMapping());
+            }
+            const mappingDisableBtn = document.getElementById('mapping-disable-btn');
+            if (mappingDisableBtn) {
+                mappingDisableBtn.addEventListener('click', () => this.disableMapping());
+            }
+            
+            // 清空日志按钮
+            const clearLogBtn = document.getElementById('clear-log-btn');
+            if (clearLogBtn) {
+                clearLogBtn.addEventListener('click', () => this.clearLog());
+            }
             
             // 串口配置按钮
             if (this.elements.saveConfig) {
@@ -300,6 +280,10 @@ class HandSensorApp {
             this.serialManager.setDataCallback((jointData) => {
                 this.updateJointDisplay(jointData);
                 this.updateStatistics();
+                // 记录数据接收日志（降低频率，每10个数据包记录一次）
+                if (jointData.packetNumber % 10 === 0) {
+                    this.log(`收到${jointData.hand === 0 ? '右手' : '左手'}数据包 #${jointData.packetNumber}`, 'info');
+                }
             });
             
             // 响应回调
@@ -309,7 +293,9 @@ class HandSensorApp {
             
             // 错误回调
             this.serialManager.setErrorCallback((error) => {
-                this.showError('串口错误: ' + error.message);
+                const errorMsg = '串口错误: ' + error.message;
+                this.log(errorMsg, 'error');
+                this.showError(errorMsg);
                 this.updateConnectionStatus(false);
             });
             
@@ -327,26 +313,30 @@ class HandSensorApp {
      */
     async connectSerial() {
         try {
-            this.showLoading('正在连接串口...');
+            this.log('正在连接串口...', 'info');
             
             const success = await this.serialManager.connect();
             
             if (success) {
                 this.updateConnectionStatus(true);
+                this.log('串口连接成功', 'success');
                 this.showSuccess('串口连接成功');
                 
                 // 开始读取数据
                 this.serialManager.startReading();
+                this.log('开始读取串口数据', 'info');
                 
             } else {
                 this.updateConnectionStatus(false);
+                this.log('串口连接失败', 'error');
                 this.showError('串口连接失败');
             }
             
         } catch (error) {
-            console.error('连接串口时出错:', error);
+            const errorMsg = '连接串口失败: ' + error.message;
+            this.log(errorMsg, 'error');
             this.updateConnectionStatus(false);
-            this.showError('连接串口失败: ' + error.message);
+            this.showError(errorMsg);
         }
     }
 
@@ -355,13 +345,16 @@ class HandSensorApp {
      */
     async disconnectSerial() {
         try {
+            this.log('正在断开串口连接...', 'info');
             await this.serialManager.disconnect();
             this.updateConnectionStatus(false);
+            this.log('串口连接已断开', 'info');
             this.showSuccess('串口连接已断开');
             
         } catch (error) {
-            console.error('断开串口连接时出错:', error);
-            this.showError('断开连接失败: ' + error.message);
+            const errorMsg = '断开连接失败: ' + error.message;
+            this.log(errorMsg, 'error');
+            this.showError(errorMsg);
         }
     }
 
@@ -394,41 +387,62 @@ class HandSensorApp {
      * @param {boolean} enabled - 是否启用
      */
     enableAllButtons(enabled) {
-        const commandButtons = [
-            this.elements.pingBtn, this.elements.versionBtn, this.elements.statusBtn,
-            this.elements.cal5pStart, this.elements.cal5pNext, this.elements.cal5pReset,
-            this.elements.calQuickStart, this.elements.calQuickFinish, this.elements.calQuickReset,
-            this.elements.calAnchorStart, this.elements.calAnchorRecord, this.elements.calAnchorApply, this.elements.calAnchorReset,
-            this.elements.sensorPrintOn, this.elements.sensorPrintOff, this.elements.sensorGetData,
-            this.elements.paramGet, this.elements.paramSet, this.elements.paramSave, this.elements.paramLoad
+        const commandButtonIds = [
+            'status-btn',
+            'quick-start-btn', 'quick-finish-btn',
+            'anchor-start-btn', 'anchor-record-btn', 'anchor-apply-btn',
+            'save-calibration-btn', 'load-calibration-btn', 'clear-calibration-btn', 'reset-calibration-btn',
+            'can-enable-btn', 'can-disable-btn',
+            'sensor-enable-btn', 'sensor-disable-btn',
+            'mapping-enable-btn', 'mapping-disable-btn'
         ];
         
-        commandButtons.forEach(btn => {
+        commandButtonIds.forEach(id => {
+            const btn = document.getElementById(id);
             if (btn) btn.disabled = !enabled;
         });
     }
 
     /**
-     * 更新关节数据显示
+     * 更新关节数据显示（使用映射数据0-1.0）
      * @param {Object} jointData - 关节数据对象
      */
     updateJointDisplay(jointData) {
         const fingerNames = ['thumb', 'index', 'middle', 'ring', 'pinky'];
         const jointTypes = ['yaw', 'pitch', 'tip'];
         
+        // 检查是否有映射数据（mappingData字段）
+        const useMappingData = jointData.mappingData && Array.isArray(jointData.mappingData);
+        
         fingerNames.forEach(fingerName => {
             jointTypes.forEach(jointType => {
                 const dataKey = `${fingerName}${jointType.charAt(0).toUpperCase() + jointType.slice(1)}`;
-                const angle = jointData[dataKey];
+                let value;
                 
-                if (this.jointElements[fingerName] && this.jointElements[fingerName][jointType]) {
+                if (useMappingData) {
+                    // 使用映射数据（0-1.0范围）
+                    const index = fingerNames.indexOf(fingerName) * 3 + jointTypes.indexOf(jointType);
+                    value = jointData.mappingData[index];
+                } else {
+                    // 如果没有映射数据，尝试使用原始数据（兼容性）
+                    value = jointData[dataKey];
+                    if (value !== undefined && value > 1.0) {
+                        // 如果是角度值，转换为0-1.0范围（假设最大255）
+                        value = value / 255.0;
+                    }
+                }
+                
+                if (this.jointElements[fingerName] && this.jointElements[fingerName][jointType] && value !== undefined) {
                     const elements = this.jointElements[fingerName][jointType];
                     
-                    // 更新数值显示
-                    elements.value.textContent = `${angle}°`;
+                    // 确保值在0-1.0范围内
+                    value = Math.max(0, Math.min(1.0, value));
                     
-                    // 更新进度条
-                    const percentage = (angle / 255) * 100;
+                    // 更新数值显示（显示为百分比或小数）
+                    elements.value.textContent = value.toFixed(3);
+                    
+                    // 更新进度条（0-1.0映射到0-100%）
+                    const percentage = value * 100;
                     elements.bar.style.width = `${percentage}%`;
                     
                     // 添加动画效果
@@ -470,8 +484,8 @@ class HandSensorApp {
                 if (this.jointElements[fingerName] && this.jointElements[fingerName][jointType]) {
                     const elements = this.jointElements[fingerName][jointType];
                     
-                    // 重置数值显示
-                    elements.value.textContent = '0°';
+                    // 重置数值显示（显示为0.000）
+                    elements.value.textContent = '0.000';
                     
                     // 重置进度条
                     elements.bar.style.width = '0%';
@@ -479,7 +493,7 @@ class HandSensorApp {
             });
         });
         
-        console.log('关节数值已重置');
+        this.log('关节数值已重置', 'info');
     }
 
     /**
@@ -506,21 +520,28 @@ class HandSensorApp {
         const timestamp = new Date().toLocaleTimeString();
         
         let responseText = `[${timestamp}] 命令: ${cmdName} (0x${cmd.toString(16).padStart(2, '0')})\n`;
+        let logMessage = '';
         
         if (type === 'ok') {
             responseText += `状态: 执行成功\n`;
+            logMessage = `命令执行成功: ${cmdName} (0x${cmd.toString(16).padStart(2, '0')})`;
+            this.log(logMessage, 'success');
             this.showResponse(this.elements.systemResponse, responseText, 'success');
         } else if (type === 'error') {
             responseText += `状态: 执行失败\n`;
+            logMessage = `命令执行失败: ${cmdName} (0x${cmd.toString(16).padStart(2, '0')})`;
+            this.log(logMessage, 'error');
             this.showResponse(this.elements.systemResponse, responseText, 'error');
         } else if (type === 'data') {
             responseText += `数据: ${data.map(b => b.toString(16).padStart(2, '0')).join(' ')}\n`;
+            logMessage = `收到数据响应: ${cmdName} (0x${cmd.toString(16).padStart(2, '0')}), 数据长度=${data.length}`;
+            this.log(logMessage, 'info');
             this.showResponse(this.elements.systemResponse, responseText, 'data');
             
             // 特殊处理某些命令的响应
-            if (cmd === this.serialManager.COMMANDS.GET_VERSION && data.length >= 3) {
-                const version = `${data[0]}.${data[1]}.${data[2]}`;
-                responseText += `版本号: ${version}\n`;
+            if (cmd === this.serialManager.COMMANDS.CMD_STATUS && data.length >= 6) {
+                const statusInfo = `快速校准状态=${data[0]}, 锚定点状态=${data[1]}, 数据帧模式=${data[2]}, 传感器打印=${data[3]}, CAN控制=${data[4]}, 传感器发送=${data[5]}`;
+                this.log(statusInfo, 'info');
             }
         }
     }
@@ -545,29 +566,26 @@ class HandSensorApp {
      */
     getCommandName(cmd) {
         const commandNames = {
-            0x01: '心跳测试',
-            0x02: '获取版本',
-            0x03: '获取状态',
-            0x10: '开始5点校准',
-            0x11: '5点校准下一步',
-            0x12: '重置5点校准',
-            0x13: '获取5点校准状态',
-            0x20: '开始快速校准',
-            0x21: '完成快速校准',
-            0x22: '重置快速校准',
-            0x23: '获取快速校准状态',
-            0x30: '开始锚定点校准',
-            0x31: '记录锚定点',
-            0x32: '应用锚定点参数',
-            0x33: '重置锚定点校准',
-            0x34: '获取锚定点校准状态',
-            0x40: '开启传感器数据打印',
-            0x41: '关闭传感器数据打印',
-            0x42: '获取传感器数据',
-            0x50: '获取校准参数',
-            0x51: '设置校准参数',
-            0x52: '保存校准参数',
-            0x53: '加载校准参数'
+            0x01: '启用数据帧模式',
+            0x02: '禁用数据帧模式',
+            0x03: '开始快速校准',
+            0x04: '完成快速校准',
+            0x05: '开始锚定点校准',
+            0x06: '记录锚定点',
+            0x07: '应用锚定点',
+            0x08: '保存校准数据',
+            0x09: '加载校准数据',
+            0x0A: '清除校准数据',
+            0x0B: '查询状态',
+            0x0C: '重置校准',
+            0x0D: '启用CAN控制',
+            0x0E: '禁用CAN控制',
+            0x0F: '启用传感器数据推送',
+            0x10: '禁用传感器数据推送',
+            0x11: '启用映射数据推送',
+            0x12: '禁用映射数据推送',
+            0x20: '传感器数据通知',
+            0x21: '映射数据通知'
         };
         
         return commandNames[cmd] || `未知命令 (0x${cmd.toString(16).padStart(2, '0')})`;
@@ -617,12 +635,65 @@ class HandSensorApp {
     }
 
     /**
+     * 初始化日志窗口
+     */
+    initLogWindow() {
+        const logContainer = document.getElementById('log-container');
+        if (logContainer) {
+            this.logContainer = logContainer;
+        }
+    }
+
+    /**
+     * 添加日志
+     * @param {string} message - 日志消息
+     * @param {string} type - 日志类型 (info, success, error, warning)
+     */
+    log(message, type = 'info') {
+        const timestamp = new Date().toLocaleTimeString();
+        const logEntry = document.createElement('div');
+        logEntry.className = `log-entry log-${type}`;
+        logEntry.innerHTML = `<span class="log-time">[${timestamp}]</span> <span class="log-message">${message}</span>`;
+        
+        if (this.logContainer) {
+            this.logContainer.appendChild(logEntry);
+            
+            // 限制日志行数
+            const logEntries = this.logContainer.querySelectorAll('.log-entry');
+            if (logEntries.length > this.logMaxLines) {
+                logEntries[0].remove();
+            }
+            
+            // 自动滚动到底部
+            this.logContainer.scrollTop = this.logContainer.scrollHeight;
+        }
+        
+        // 同时输出到控制台
+        const consoleMethods = {
+            'info': console.log,
+            'success': console.log,
+            'error': console.error,
+            'warning': console.warn
+        };
+        const consoleMethod = consoleMethods[type] || console.log;
+        consoleMethod(`[${timestamp}] ${message}`);
+    }
+
+    /**
+     * 清空日志
+     */
+    clearLog() {
+        if (this.logContainer) {
+            this.logContainer.innerHTML = '';
+        }
+    }
+
+    /**
      * 显示加载状态
      * @param {string} message - 加载消息
      */
     showLoading(message) {
-        console.log(message);
-        // 可以在这里添加加载动画
+        this.log(message, 'info');
     }
 
     /**
@@ -630,8 +701,7 @@ class HandSensorApp {
      * @param {string} message - 成功消息
      */
     showSuccess(message) {
-        console.log('✓', message);
-        // 可以在这里添加成功提示
+        this.log(message, 'success');
         this.showNotification(message, 'success');
     }
 
@@ -640,8 +710,7 @@ class HandSensorApp {
      * @param {string} message - 错误消息
      */
     showError(message) {
-        console.error('✗', message);
-        // 可以在这里添加错误提示
+        this.log(message, 'error');
         this.showNotification(message, 'error');
     }
 
@@ -695,110 +764,93 @@ class HandSensorApp {
     }
 
     // 系统命令方法
-    async ping() {
-        await this.serialManager.ping();
-    }
-
-    async getVersion() {
-        await this.serialManager.getVersion();
-    }
-
     async getStatus() {
+        this.log('发送查询状态命令', 'info');
         await this.serialManager.getStatus();
-    }
-
-    // 5点校准方法
-    async start5PointCalibration() {
-        await this.serialManager.start5PointCalibration();
-        this.elements.cal5pStatus.textContent = '校准中...';
-    }
-
-    async next5PointStep() {
-        await this.serialManager.next5PointStep();
-    }
-
-    async reset5PointCalibration() {
-        await this.serialManager.reset5PointCalibration();
-        this.elements.cal5pStatus.textContent = '未开始';
     }
 
     // 快速校准方法
     async startQuickCalibration() {
+        this.log('发送快速校准开始命令', 'info');
         await this.serialManager.startQuickCalibration();
-        this.elements.calQuickStatus.textContent = '校准中...';
     }
 
     async finishQuickCalibration() {
+        this.log('发送快速校准完成命令', 'info');
         await this.serialManager.finishQuickCalibration();
-        this.elements.calQuickStatus.textContent = '已完成';
-    }
-
-    async resetQuickCalibration() {
-        await this.serialManager.resetQuickCalibration();
-        this.elements.calQuickStatus.textContent = '未开始';
     }
 
     // 锚定点校准方法
     async startAnchorCalibration() {
-        const finger1 = parseInt(this.elements.anchorFinger1.value);
-        const finger2 = parseInt(this.elements.anchorFinger2.value);
-        await this.serialManager.startAnchorCalibration(finger1, finger2);
-        this.elements.calAnchorStatus.textContent = '校准中...';
+        const hand = parseInt(document.getElementById('anchor-hand')?.value || 0);
+        const finger1 = parseInt(document.getElementById('anchor-finger1')?.value || 1);
+        const finger2 = parseInt(document.getElementById('anchor-finger2')?.value || 2);
+        this.log(`发送锚定点校准开始命令: 手侧=${hand}, 手指=[${finger1}, ${finger2}]`, 'info');
+        await this.serialManager.startAnchorCalibration(hand, [finger1, finger2]);
     }
 
     async recordAnchorPoint() {
+        this.log('发送记录锚定点命令', 'info');
         await this.serialManager.recordAnchorPoint();
     }
 
     async applyAnchorCalibration() {
+        this.log('发送应用锚定点校准命令', 'info');
         await this.serialManager.applyAnchorCalibration();
-        this.elements.calAnchorStatus.textContent = '已应用';
     }
 
-    async resetAnchorCalibration() {
-        await this.serialManager.resetAnchorCalibration();
-        this.elements.calAnchorStatus.textContent = '未开始';
+    // 校准数据管理方法
+    async saveCalibration() {
+        this.log('发送保存校准数据命令', 'info');
+        await this.serialManager.saveCalibration();
+    }
+
+    async loadCalibration() {
+        this.log('发送加载校准数据命令', 'info');
+        await this.serialManager.loadCalibration();
+    }
+
+    async clearCalibration() {
+        this.log('发送清除校准数据命令', 'info');
+        await this.serialManager.clearCalibration();
+    }
+
+    async resetCalibration() {
+        this.log('发送重置校准命令', 'info');
+        await this.serialManager.resetCalibration();
+    }
+
+    // CAN控制方法
+    async enableCAN() {
+        this.log('发送启用CAN控制命令', 'info');
+        await this.serialManager.enableCAN();
+    }
+
+    async disableCAN() {
+        this.log('发送禁用CAN控制命令', 'info');
+        await this.serialManager.disableCAN();
     }
 
     // 传感器控制方法
-    async enableSensorPrint() {
-        await this.serialManager.enableSensorPrint();
+    async enableSensor() {
+        this.log('发送启用传感器数据推送命令', 'info');
+        await this.serialManager.enableSensor();
     }
 
-    async disableSensorPrint() {
-        await this.serialManager.disableSensorPrint();
+    async disableSensor() {
+        this.log('发送禁用传感器数据推送命令', 'info');
+        await this.serialManager.disableSensor();
     }
 
-    async getSensorData() {
-        await this.serialManager.getSensorData();
+    // 映射数据控制方法
+    async enableMapping() {
+        this.log('发送启用映射数据推送命令', 'info');
+        await this.serialManager.enableMapping();
     }
 
-    // 校准参数管理方法
-    async getCalibrationParameter() {
-        const sensorIdx = parseInt(this.elements.paramSensorIdx.value);
-        await this.serialManager.getCalibrationParameter(sensorIdx);
-    }
-
-    async setCalibrationParameter() {
-        const sensorIdx = parseInt(this.elements.paramSensorIdx.value);
-        const minValue = parseInt(this.elements.paramMinValue.value);
-        const maxValue = parseInt(this.elements.paramMaxValue.value);
-        
-        // 将16位值拆分为高低字节
-        const minHigh = (minValue >> 8) & 0xFF;
-        const minLow = minValue & 0xFF;
-        const maxHigh = (maxValue >> 8) & 0xFF;
-        const maxLow = maxValue & 0xFF;
-        
-        await this.serialManager.setCalibrationParameter(sensorIdx, minHigh, minLow, maxHigh, maxLow);
-    }
-
-    async saveCalibrationParameters() {
-        await this.serialManager.saveCalibrationParameters();
-    }
-
-    async loadCalibrationParameters() {
-        await this.serialManager.loadCalibrationParameters();
+    async disableMapping() {
+        this.log('发送禁用映射数据推送命令', 'info');
+        await this.serialManager.disableMapping();
     }
 
     // 串口配置方法
@@ -958,18 +1010,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // 检查所有必要的DOM元素是否存在
     const requiredElements = [
         'connect-btn', 'disconnect-btn', 'reset-values', 'toggle-animation',
-        'packet-count', 'update-rate', 'last-update', 'ping-btn', 'version-btn',
-        'status-btn', 'system-response', 'cal-5p-start', 'cal-5p-next',
-        'cal-5p-reset', 'cal-5p-status', 'cal-quick-start', 'cal-quick-finish',
-        'cal-quick-reset', 'cal-quick-status', 'anchor-finger1', 'anchor-finger2',
-        'cal-anchor-start', 'cal-anchor-record', 'cal-anchor-apply', 'cal-anchor-reset',
-        'cal-anchor-status', 'sensor-print-on', 'sensor-print-off', 'sensor-get-data',
-        'param-sensor-idx', 'param-min-value', 'param-max-value', 'param-get',
-        'param-set', 'param-save', 'param-load', 'parameter-response',
+        'packet-count', 'update-rate', 'last-update',
+        'status-btn', 'system-response',
+        'quick-start-btn', 'quick-finish-btn',
+        'anchor-hand', 'anchor-finger1', 'anchor-finger2',
+        'anchor-start-btn', 'anchor-record-btn', 'anchor-apply-btn',
+        'save-calibration-btn', 'load-calibration-btn', 'clear-calibration-btn', 'reset-calibration-btn',
+        'can-enable-btn', 'can-disable-btn',
+        'sensor-enable-btn', 'sensor-disable-btn',
+        'mapping-enable-btn', 'mapping-disable-btn',
         'baud-rate', 'data-bits', 'stop-bits', 'parity', 'flow-control',
         'timeout', 'save-config', 'load-config', 'reset-config', 'refresh-ports',
         'current-port', 'port-details', 'port-id', 'port-manufacturer',
-        'port-product-id', 'port-vendor-id'
+        'port-product-id', 'port-vendor-id',
+        'log-container', 'clear-log-btn'
     ];
     
     const missingElements = requiredElements.filter(id => !document.getElementById(id));

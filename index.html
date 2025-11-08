@@ -10,7 +10,7 @@
     <div class="container">
         <!-- 头部标题 -->
         <header class="header">
-            <h1>手部关节传感器实时监控</h1>
+            <h1>EXHandY网页上位机</h1>
             <div class="status-indicator">
                 <span id="connection-status" class="status-dot disconnected"></span>
                 <span id="connection-text">未连接</span>
@@ -28,6 +28,26 @@
                     <div class="command-group">
                         <button id="mapping-enable-btn" class="btn btn-success" disabled>启用映射</button>
                         <button id="mapping-disable-btn" class="btn btn-danger" disabled>禁用映射</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 协议设置 -->
+            <div class="protocol-control-section">
+                <div class="protocol-control-header">
+                    <h2>协议设置</h2>
+                </div>
+                <div class="protocol-control-commands">
+                    <div class="protocol-selection">
+                        <label for="protocol-select">协议类型:</label>
+                        <select id="protocol-select">
+                            <option value="0">L20</option>
+                            <option value="1">L10</option>
+                            <option value="2">L21</option>
+                        </select>
+                    </div>
+                    <div class="command-group">
+                        <button id="set-protocol-btn" class="btn btn-primary" disabled>设置协议</button>
                     </div>
                 </div>
             </div>
@@ -858,7 +878,7 @@
 
         <!-- 底部信息 -->
         <footer class="footer">
-            <p>手部关节传感器可视化系统 v1.0 | 支持15个关节映射数据实时监控 (0-1.0)</p>
+            <p>EXHandY网页上位机  Powered by Yuan WeiTian | 支持15个关节映射数据实时监控 (0-1.0) | github.com/WeitianYuan-web</p>
         </footer>
     </div>
 

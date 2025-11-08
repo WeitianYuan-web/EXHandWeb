@@ -493,6 +493,21 @@ class HandSensorApp {
                 console.warn('未找到 mapping-disable-btn 按钮');
             }
             
+            // 协议设置按钮
+            const setProtocolBtn = document.getElementById('set-protocol-btn');
+            if (setProtocolBtn) {
+                setProtocolBtn.addEventListener('click', async () => {
+                    try {
+                        await this.setProtocol();
+                    } catch (error) {
+                        console.error('设置协议失败:', error);
+                        this.log('设置协议失败: ' + error.message, 'error');
+                    }
+                });
+            } else {
+                console.warn('未找到 set-protocol-btn 按钮');
+            }
+            
             // 清空日志按钮
             const clearLogBtn = document.getElementById('clear-log-btn');
             if (clearLogBtn) {
@@ -679,7 +694,7 @@ class HandSensorApp {
             'save-calibration-btn', 'load-calibration-btn', 'clear-calibration-btn', 'reset-calibration-btn',
             'can-enable-btn', 'can-disable-btn',
             'sensor-enable-btn', 'sensor-disable-btn',
-            'mapping-enable-btn', 'mapping-disable-btn'
+            'mapping-enable-btn', 'mapping-disable-btn', 'set-protocol-btn'
         ];
         
         let enabledCount = 0;
@@ -971,6 +986,7 @@ class HandSensorApp {
             0x10: '禁用传感器数据推送',
             0x11: '启用映射数据推送',
             0x12: '禁用映射数据推送',
+            0x13: '设置协议',
             0x20: '传感器数据通知',
             0x21: '映射数据通知'
         };
@@ -1340,6 +1356,31 @@ class HandSensorApp {
         await this.serialManager.disableMapping();
     }
 
+    /**
+     * 设置协议
+     */
+    async setProtocol() {
+        if (!this.serialManager || !this.serialManager.getConnectionStatus()) {
+            this.log('错误: 请先连接串口', 'error');
+            this.showError('请先连接串口');
+            return;
+        }
+        
+        const protocolSelect = document.getElementById('protocol-select');
+        if (!protocolSelect) {
+            this.log('错误: 未找到协议选择器', 'error');
+            return;
+        }
+        
+        const protocolId = parseInt(protocolSelect.value, 10);
+        const protocolNames = ['L20', 'L10', 'L21'];
+        const protocolName = protocolNames[protocolId] || '未知';
+        
+        this.log(`发送设置协议命令: ${protocolName} (ID: ${protocolId})`, 'info');
+        await this.serialManager.setProtocol(protocolId);
+        this.log(`协议已设置为: ${protocolName}`, 'success');
+    }
+
     // 串口配置方法
     /**
      * 从UI更新串口配置
@@ -1505,7 +1546,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'save-calibration-btn', 'load-calibration-btn', 'clear-calibration-btn', 'reset-calibration-btn',
         'can-enable-btn', 'can-disable-btn',
         'sensor-enable-btn', 'sensor-disable-btn',
-        'mapping-enable-btn', 'mapping-disable-btn',
+        'mapping-enable-btn', 'mapping-disable-btn', 'set-protocol-btn', 'protocol-select',
         'baud-rate', 'data-bits', 'stop-bits', 'parity', 'flow-control',
         'timeout', 'save-config', 'load-config', 'reset-config', 'refresh-ports',
         'current-port', 'port-details', 'port-id', 'port-manufacturer',

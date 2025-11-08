@@ -68,6 +68,7 @@ class SerialManager {
             CMD_SENSOR_DISABLE: 0x10,
             CMD_MAPPING_ENABLE: 0x11,
             CMD_MAPPING_DISABLE: 0x12,
+            CMD_SET_PROTOCOL: 0x13,
             
             // 数据通知类型
             CMD_SENSOR_DATA: 0x20,      // 传感器数据通知
@@ -1015,6 +1016,19 @@ class SerialManager {
 
     async disableMapping() {
         return await this.sendFrame(this.COMMANDS.CMD_MAPPING_DISABLE);
+    }
+
+    /**
+     * 设置协议
+     * @param {number} protocolId - 协议ID（0=L20, 1=L10, 2=L21）
+     * @returns {Promise<Object>} 响应结果
+     */
+    async setProtocol(protocolId) {
+        if (protocolId < 0 || protocolId > 2) {
+            throw new Error('协议ID无效，必须是0(L20)、1(L10)或2(L21)');
+        }
+        const data = [protocolId];
+        return await this.sendFrame(this.COMMANDS.CMD_SET_PROTOCOL, data);
     }
 }
 

@@ -30,7 +30,7 @@ class SerialManager {
         
         // 串口配置 - 默认值
         this.serialConfig = {
-            baudRate: 115200,
+            baudRate: 1152000,
             dataBits: 8,
             stopBits: 1,
             parity: 'none',
@@ -817,7 +817,7 @@ class SerialManager {
      */
     resetSerialConfig() {
         this.serialConfig = {
-            baudRate: 115200,
+            baudRate: 1152000,
             dataBits: 8,
             stopBits: 1,
             parity: 'none',

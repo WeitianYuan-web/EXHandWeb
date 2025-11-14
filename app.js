@@ -1393,7 +1393,7 @@ class HandSensorApp {
             }
             
             const config = {
-                baudRate: this.elements.baudRate ? parseInt(this.elements.baudRate.value) : 115200,
+                baudRate: this.elements.baudRate ? parseInt(this.elements.baudRate.value) : 1152000,
                 dataBits: this.elements.dataBits ? parseInt(this.elements.dataBits.value) : 8,
                 stopBits: this.elements.stopBits ? parseInt(this.elements.stopBits.value) : 1,
                 parity: this.elements.parity ? this.elements.parity.value : 'none',
